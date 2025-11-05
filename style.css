@@ -17,6 +17,7 @@ html,body{
   color:var(--text);
   background:#0b0f16;
   font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol";
+  transition: background-color 0.4s ease, color 0.4s ease, border-color 0.4s ease;
 }
 
 /* Animated gradient background + subtle twinkling */
@@ -270,22 +271,72 @@ input:focus, select:focus{
   background: linear-gradient(135deg, #ffe259, #ffa751);
 }
 
-/* Light Mode Theme */
+/* === Light Mode Theme (Improved Readability) === */
 body.light-mode {
-  background: linear-gradient(to bottom, #f5f7fa, #c3cfe2);
-  color: #202020;
+  background: linear-gradient(to bottom, #f0f4ff, #d9e5ff);
+  color: #1a1a1a;
 }
-body.light-mode .card {
-  background: rgba(255,255,255,0.8);
-  border-color: #ccc;
-  color: #202020;
+
+body.light-mode .app-header h1,
+body.light-mode .subtitle {
+  color: #1a1a1a;
 }
+
+body.light-mode input,
+body.light-mode select {
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid #ccc;
+  color: #1a1a1a;
+}
+
+body.light-mode input::placeholder {
+  color: #888;
+}
+
 body.light-mode .btn.primary {
   background: linear-gradient(135deg, #1ec6ff, #7c5cff);
   color: #fff;
 }
-body.light-mode .btn.secondary {
-  background: linear-gradient(135deg, #444, #666);
-  color: #fff;
+
+body.light-mode .controls {
+  background: rgba(255, 255, 255, 0.8);
+  border: 1px solid #ddd;
 }
 
+body.light-mode .card {
+  background: #fff;
+  border: 1px solid #ccc;
+  color: #202020;
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.08);
+}
+
+body.light-mode .segment {
+  background: #f8f8f8;
+  border: 1px solid #ddd;
+}
+
+body.light-mode .segment .lbl {
+  color: #555;
+}
+
+body.light-mode .status-row {
+  color: #333;
+}
+
+body.light-mode .empty-card {
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px dashed #bbb;
+  color: #333;
+}
+
+body.light-mode .app-footer {
+  color: #444;
+}
+
+body.light-mode .icon-btn {
+  color: #333;
+}
+
+body.light-mode .icon-btn:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
