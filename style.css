@@ -1,0 +1,255 @@
+:root{
+  --bg-speed: 35s;           /* Adjusted dynamically by JS as trips approach */
+  --card-glow: 0 0 0px rgba(255,255,255,0);
+  --accent: #7c5cff;
+  --accent-2: #1ec6ff;
+  --surface: rgba(255,255,255,0.08);
+  --surface-2: rgba(255,255,255,0.14);
+  --text: #f3f5f7;
+  --muted: #cfd6dd;
+  --danger: #ff5470;
+}
+
+*{box-sizing:border-box}
+html,body{
+  height:100%;
+  margin:0;
+  color:var(--text);
+  background:#0b0f16;
+  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol";
+}
+
+/* Animated gradient background + subtle twinkling */
+.bg{
+  position:fixed; inset:0;
+  background:
+    radial-gradient(1200px 800px at 10% -10%, rgba(124,92,255,0.25), transparent 60%),
+    radial-gradient(1000px 700px at 110% 10%, rgba(30,198,255,0.22), transparent 60%),
+    linear-gradient(120deg, #0b0f16, #0b0f16);
+  overflow:hidden;
+  z-index:-2;
+}
+.bg::before, .bg::after{
+  content:"";
+  position:absolute; inset:-100%;
+  background: conic-gradient(from 0deg, rgba(124,92,255,0.14), rgba(30,198,255,0.14), rgba(124,92,255,0.14));
+  mix-blend-mode: screen;
+  animation: swirl var(--bg-speed) linear infinite;
+}
+.bg::after{
+  animation-direction: reverse;
+  opacity:0.4;
+}
+@keyframes swirl{
+  to{ transform: rotate(360deg); }
+}
+
+/* Layout */
+.app-header{
+  text-align:center;
+  padding:2.2rem 1rem 1rem;
+}
+.app-header h1{
+  margin:0;
+  font-weight:800;
+  letter-spacing:0.2px;
+}
+.subtitle{
+  margin:0.35rem 0 0;
+  opacity:0.8;
+}
+
+.container{
+  max-width:1100px;
+  margin:0 auto;
+  padding:1rem;
+}
+
+.controls{
+  background:var(--surface);
+  border:1px solid var(--surface-2);
+  backdrop-filter: blur(6px);
+  border-radius:18px;
+  padding:1rem;
+  display:grid;
+  gap:1rem;
+}
+
+#add-form{
+  display:grid;
+  grid-template-columns: 1fr 180px auto;
+  gap:0.75rem;
+}
+.field{
+  display:flex; flex-direction:column; gap:0.35rem;
+}
+label{ font-size:0.9rem; color:var(--muted); }
+
+input, select{
+  width:100%;
+  padding:0.75rem 0.9rem;
+  border-radius:12px;
+  border:1px solid var(--surface-2);
+  background: rgba(255,255,255,0.06);
+  color:var(--text);
+  outline:none;
+}
+input:focus, select:focus{
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(124,92,255,0.22);
+}
+
+.btn{
+  border:0; cursor:pointer; padding:0.9rem 1.1rem;
+  border-radius:12px; font-weight:700;
+}
+.btn.primary{
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  color:#0b0f16;
+}
+
+.view-options{
+  display:flex; align-items:center; gap:0.75rem;
+}
+
+.list-wrap{ margin-top:1rem; }
+
+.empty{
+  display:none;
+}
+.empty-card{
+  text-align:center;
+  padding:2.2rem 1rem;
+  border:1px dashed var(--surface-2);
+  border-radius:18px;
+  background: rgba(255,255,255,0.04);
+}
+
+.cards{
+  display:grid;
+  grid-template-columns: repeat( auto-fill, minmax(260px, 1fr) );
+  gap:1rem;
+}
+
+.card{
+  position:relative;
+  background: rgba(12,16,24,0.8);
+  border:1px solid var(--surface-2);
+  border-radius:18px;
+  padding:1rem;
+  box-shadow: var(--card-glow);
+  transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease, background .18s ease;
+  overflow:hidden;
+}
+.card:hover{ transform: translateY(-2px); }
+
+.card::after{
+  /* subtle moving sheen */
+  content:"";
+  position:absolute; inset:-40%;
+  background: radial-gradient(600px 300px at var(--sx,60%) var(--sy,40%), rgba(255,255,255,0.06), transparent 60%);
+  animation: drift 18s linear infinite;
+  pointer-events:none;
+  mix-blend-mode: screen;
+}
+@keyframes drift { to { transform: translate3d(10%, -6%, 0); } }
+
+.card-head{
+  display:flex; align-items:center; gap:0.5rem;
+}
+.card .title{ margin:0; font-size:1.05rem; font-weight:800; flex:1; }
+
+.icon-btn{
+  appearance:none;
+  border:0; background:transparent; color:var(--muted);
+  padding:0.35rem; border-radius:10px; cursor:pointer;
+}
+.icon-btn:hover{ color:#fff; background: rgba(255,255,255,0.06); }
+
+.date-row{
+  margin:0.15rem 0 0.6rem;
+  font-size:0.9rem; color:var(--muted);
+}
+
+.countdown{
+  display:grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap:0.5rem;
+  margin:.4rem 0 .5rem;
+}
+.segment{
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  padding:0.6rem 0.4rem; min-height:64px;
+  border-radius:14px;
+  background: rgba(255,255,255,0.06);
+  border:1px solid var(--surface-2);
+}
+.segment .num{ font-weight:900; font-size:1.15rem; line-height:1; }
+.segment .lbl{ font-size:0.75rem; color:var(--muted); margin-top:0.25rem; }
+
+/* Status row */
+.status-row{
+  display:flex; justify-content:flex-start; margin-top:0.35rem;
+  font-size:0.9rem; color:var(--muted);
+}
+
+/* Display modes — JS toggles these */
+.mode-days .segment.months,
+.mode-days .segment.weeks,
+.mode-days .segment.hours,
+.mode-days .segment.minutes,
+.mode-days .segment.seconds { display:none; }
+
+.mode-hm .segment.months,
+.mode-hm .segment.weeks,
+.mode-hm .segment.days,
+.mode-hm .segment.seconds { display:none; }
+
+/* Proximity-driven effects */
+.card.soon{
+  border-color: rgba(255, 214, 102, 0.65);
+  box-shadow: 0 0 0 0 rgba(255,214,102,0.0);
+  animation: pulse-slow 2.6s ease-in-out infinite;
+}
+.card.urgent{
+  border-color: rgba(255,132,72,0.75);
+  animation: pulse-med 1.7s ease-in-out infinite;
+}
+.card.imminent{
+  border-color: rgba(255,84,112,0.95);
+  animation: pulse-fast 1s ease-in-out infinite;
+}
+.card.done{
+  border-color: rgba(160,255,180,0.85);
+  background: linear-gradient(180deg, rgba(24,44,32,0.65), rgba(17,26,22,0.7));
+}
+
+@keyframes pulse-slow{
+  0%,100%{ box-shadow: 0 0 0 0 rgba(255,214,102,0.0); }
+  50%   { box-shadow: 0 0 28px 0 rgba(255,214,102,0.35); }
+}
+@keyframes pulse-med{
+  0%,100%{ box-shadow: 0 0 0 0 rgba(255,132,72,0.0); }
+  50%   { box-shadow: 0 0 32px 0 rgba(255,132,72,0.45); }
+}
+@keyframes pulse-fast{
+  0%,100%{ box-shadow: 0 0 0 0 rgba(255,84,112,0.0); }
+  50%   { box-shadow: 0 0 40px 0 rgba(255,84,112,0.55); }
+}
+
+/* Responsive tweaks */
+@media (max-width: 820px){
+  #add-form{
+    grid-template-columns: 1fr 1fr;
+  }
+  #add-form .btn{ grid-column: 1 / -1; }
+  .countdown{ grid-template-columns: repeat(3, 1fr); }
+  .mode-hm .countdown{ grid-template-columns: repeat(2, 1fr); }
+  .mode-days .countdown{ grid-template-columns: 1fr; }
+}
+
+.app-footer{
+  text-align:center;
+  padding:1rem 1rem 2rem;
+  color:var(--muted);
+}
