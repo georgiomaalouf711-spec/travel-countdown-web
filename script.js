@@ -97,6 +97,14 @@ function render(){
   for(const item of state){
     const node = document.importNode(els.template.content, true);
     const card = node.querySelector('.card');
+     if (item.background) {
+        card.style.backgroundImage = `url('${item.background}')`;
+        card.style.backgroundSize = "cover";
+        card.style.backgroundPosition = "center";
+        card.style.color = "#fff"; // make text readable
+        card.style.textShadow = "0 1px 3px rgba(0,0,0,0.6)";
+                           }
+
     card.dataset.id = item.id;
 
     const title = node.querySelector('.title');
