@@ -315,3 +315,16 @@ document.addEventListener('mousemove', (e) => {
     card.style.setProperty('--sy', `${y}%`);
   });
 });
+
+// === Theme toggle ===
+const themeToggle = document.getElementById('theme-toggle');
+themeToggle.addEventListener('click', () => {
+  document.body.classList.toggle('light-mode');
+  // Save preference
+  localStorage.setItem('theme', document.body.classList.contains('light-mode') ? 'light' : 'dark');
+});
+
+// Apply saved preference on load
+if (localStorage.getItem('theme') === 'light') {
+  document.body.classList.add('light-mode');
+}
