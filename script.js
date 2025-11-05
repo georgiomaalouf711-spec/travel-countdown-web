@@ -65,17 +65,24 @@ els.form.addEventListener('submit', (e) => {
   e.preventDefault();
   const name = els.destination.value.trim();
   const dateISO = els.date.value;
-  if(!name || !dateISO) return;
+  const bgFile = document.getElementById('bgUpload').files[0];
 
-  const when = new Date(dateISO + 'T00:00:00');
-  if(isNaN(when.getTime())){
-    alert('Please enter a valid date.');
-    return;
+  if (!name || !dateISO) return;
+
+  if (bgFile) {
+    const reader = new FileReader();
+    reader.onload = () => {
+      addCountdown(name, dateISO, reader.result);
+    };
+    reader.readAsDataURL(bgFile);
+  } else {
+    addCountdown(name, dateISO, null);
   }
-  addCountdown(name, dateISO);
+
   els.form.reset();
   els.destination.focus();
 });
+
 
 els.mode.addEventListener('change', () => {
   render(); // reapply mode classes
