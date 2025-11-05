@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1, maximum-scale=1"
+  />
+  <title>Travel Countdown</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="bg"></div>
+
+  <header class="app-header">
+    <h1>✈️ Travel Countdown</h1>
+    <p class="subtitle">Track multiple trips with a live, animated countdown</p>
+  </header>
+
+  <main class="container">
+    <section class="controls">
+      <form id="add-form" autocomplete="off">
+        <div class="field">
+          <label for="destination">Destination</label>
+          <input
+            id="destination"
+            type="text"
+            placeholder='e.g. "Tokyo Trip"'
+            required
+            maxlength="80"
+          />
+        </div>
+
+        <div class="field">
+          <label for="date">Travel date</label>
+          <input id="date" type="date" required />
+        </div>
+
+        <button class="btn primary" type="submit">Add countdown</button>
+      </form>
+
+      <div class="view-options">
+        <label for="mode">Display mode</label>
+        <select id="mode">
+          <option value="full" selected>
+            Full breakdown (mo / wk / d / h / m / s)
+          </option>
+          <option value="days">Days only</option>
+          <option value="hm">Hours & Minutes only</option>
+        </select>
+      </div>
+    </section>
+
+    <section class="list-wrap">
+      <div id="empty-state" class="empty">
+        <div class="empty-card">
+          <h3>No countdowns yet</h3>
+          <p>Add your first destination and travel date above.</p>
+        </div>
+      </div>
+
+      <div id="cards" class="cards"></div>
+    </section>
+  </main>
+
+  <footer class="app-footer">
+    <small>
+      Tip: as your trip gets closer, cards will glow and the background speeds up ✨
+    </small>
+  </footer>
+
+  <template id="card-template">
+    <article class="card">  
+      <div class="card-head">
+        <h3 class="title"></h3>
+        <button class="icon-btn delete" title="Delete this countdown" aria-label="Delete">
+          <svg viewBox="0 0 24 24" width="20" height="20" role="img" aria-hidden="true">
+            <path d="M9 3h6a1 1 0 0 1 1 1v1h4v2H4V5h4V4a1 1 0 0 1 1-1Zm1 5h2v10h-2V8Zm4 0h2v10h-2V8ZM8 8h2v10H8V8Z" fill="currentColor"/>
+          </svg>
+        </button>
+      </div>
+
+      <p class="date-row">
+        Departs on <span class="date-text"></span>
+      </p>
+
+      <div class="countdown">
+        <div class="segment months"><span class="num">0</span><span class="lbl">mo</span></div>
+        <div class="segment weeks"><span class="num">0</span><span class="lbl">wk</span></div>
+        <div class="segment days"><span class="num">0</span><span class="lbl">d</span></div>
+        <div class="segment hours"><span class="num">0</span><span class="lbl">h</span></div>
+        <div class="segment minutes"><span class="num">0</span><span class="lbl">m</span></div>
+        <div class="segment seconds"><span class="num">0</span><span class="lbl">s</span></div>
+      </div>
+
+      <div class="status-row">
+        <span class="status"></span>
+      </div>
+    </article>
+  </template>
+
+  <script src="script.js"></script>
+</body>
+</html>
