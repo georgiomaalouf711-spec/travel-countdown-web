@@ -253,3 +253,39 @@ input:focus, select:focus{
   padding:1rem 1rem 2rem;
   color:var(--muted);
 }
+
+/* === Theme Toggle === */
+.btn.secondary {
+  background: linear-gradient(135deg, #ffb347, #ffcc33);
+  color: #0b0f16;
+  font-weight: 700;
+  border: none;
+  padding: 0.7rem 1rem;
+  border-radius: 12px;
+  cursor: pointer;
+  margin-top: 0.8rem;
+  transition: background 0.3s;
+}
+.btn.secondary:hover {
+  background: linear-gradient(135deg, #ffe259, #ffa751);
+}
+
+/* Light Mode Theme */
+body.light-mode {
+  background: linear-gradient(to bottom, #f5f7fa, #c3cfe2);
+  color: #202020;
+}
+body.light-mode .card {
+  background: rgba(255,255,255,0.8);
+  border-color: #ccc;
+  color: #202020;
+}
+body.light-mode .btn.primary {
+  background: linear-gradient(135deg, #1ec6ff, #7c5cff);
+  color: #fff;
+}
+body.light-mode .btn.secondary {
+  background: linear-gradient(135deg, #444, #666);
+  color: #fff;
+}
+
