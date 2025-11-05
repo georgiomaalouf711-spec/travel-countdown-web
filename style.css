@@ -346,3 +346,14 @@ body.light-mode .icon-btn:hover {
   transform: scale(0.97);
 }
 
+.card {
+  background-size: cover;
+  background-position: center;
+  background-blend-mode: overlay;
+}
+
+.card.has-bg {
+  color: #fff;
+  text-shadow: 0 1px 4px rgba(0,0,0,0.7);
+}
+
