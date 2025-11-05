@@ -340,3 +340,9 @@ body.light-mode .icon-btn {
 body.light-mode .icon-btn:hover {
   background: rgba(0, 0, 0, 0.05);
 }
+
+.drag-ghost {
+  opacity: 0.5;
+  transform: scale(0.97);
+}
+
