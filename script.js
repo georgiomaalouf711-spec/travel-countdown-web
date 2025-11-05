@@ -42,16 +42,18 @@ function uid(){
   return Math.random().toString(36).slice(2,9);
 }
 
-function addCountdown(name, dateISO){
+function addCountdown(name, dateISO, bgDataUrl = null) {
   state.push({
     id: uid(),
     name: name.trim(),
     date: dateISO,
+    background: bgDataUrl, // save background
     createdAt: new Date().toISOString(),
   });
   save();
   render();
 }
+
 
 function removeCountdown(id){
   state = state.filter(x => x.id !== id);
