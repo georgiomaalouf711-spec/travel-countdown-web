@@ -328,3 +328,20 @@ themeToggle.addEventListener('click', () => {
 if (localStorage.getItem('theme') === 'light') {
   document.body.classList.add('light-mode');
 }
+
+// === Drag & Drop Sorting ===
+document.addEventListener("DOMContentLoaded", () => {
+  const cardsContainer = document.getElementById("cards");
+
+  // Enable drag & drop sorting
+  Sortable.create(cardsContainer, {
+    animation: 150,
+    ghostClass: "drag-ghost",
+    onEnd: () => {
+      // Reorder the internal state array to match the new visual order
+      const newOrder = Array.from(cardsContainer.children).map(c => c.dataset.id);
+      state.sort((a, b) => newOrder.indexOf(a.id) - newOrder.indexOf(b.id));
+      save();
+    },
+  });
+});
