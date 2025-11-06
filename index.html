@@ -2,10 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta
-    name="viewport"
-    content="width=device-width, initial-scale=1, maximum-scale=1"
-  />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
   <title>Travel Countdown</title>
   <link rel="stylesheet" href="style.css" />
 </head>
@@ -14,7 +11,6 @@
 
   <header class="app-header">
     <h1>✈️ Travel Countdown</h1>
-    <!-- Add this in header -->
     <button id="theme-toggle" class="btn secondary">☀️ / 🌙</button>
     <p class="subtitle">Track multiple trips with a live, animated countdown</p>
   </header>
@@ -24,20 +20,14 @@
       <form id="add-form" autocomplete="off">
         <div class="field">
           <label for="destination">Destination</label>
-          <input
-            id="destination"
-            type="text"
-            placeholder='e.g. "Tokyo Trip"'
-            required
-            maxlength="80"
-          />
+          <input id="destination" type="text" placeholder='e.g. "Tokyo Trip"' required maxlength="80" />
         </div>
 
         <div class="field">
           <label for="date">Travel date</label>
           <input id="date" type="date" required />
         </div>
-      
+
         <div class="field">
           <label for="bgUpload">Background image (optional)</label>
           <input id="bgUpload" type="file" accept="image/*" />
@@ -49,9 +39,7 @@
       <div class="view-options">
         <label for="mode">Display mode</label>
         <select id="mode">
-          <option value="full" selected>
-            Full breakdown (mo / wk / d / h / m / s)
-          </option>
+          <option value="full" selected>Full breakdown (mo / wk / d / h / m / s)</option>
           <option value="days">Days only</option>
           <option value="hm">Hours & Minutes only</option>
         </select>
@@ -71,13 +59,12 @@
   </main>
 
   <footer class="app-footer">
-    <small>
-      Tip: as your trip gets closer, cards will glow and the background speeds up ✨
-    </small>
+    <small>Tip: as your trip gets closer, cards will glow and the background speeds up ✨</small>
   </footer>
 
+  <!-- Card template -->
   <template id="card-template">
-    <article class="card">  
+    <article class="card">
       <div class="card-head">
         <h3 class="title"></h3>
         <button class="icon-btn delete" title="Delete this countdown" aria-label="Delete">
@@ -106,39 +93,38 @@
     </article>
   </template>
 
-  <!-- === Edit Countdown Modal === -->
-<div id="editModal" class="modal hidden">
-  <div class="modal-content">
-    <h2>Edit Countdown</h2>
+  <!-- Edit Countdown Modal -->
+  <div id="editModal" class="modal hidden">
+    <div class="modal-content">
+      <h2>Edit Countdown</h2>
 
-    <div class="field">
-      <label for="editName">Destination</label>
-      <input id="editName" type="text" required />
-    </div>
+      <div class="field">
+        <label for="editName">Destination</label>
+        <input id="editName" type="text" required />
+      </div>
 
-    <div class="field">
-      <label for="editDate">Travel date</label>
-      <input id="editDate" type="date" required />
-    </div>
+      <div class="field">
+        <label for="editDate">Travel date</label>
+        <input id="editDate" type="date" required />
+      </div>
 
-    <div class="field">
-      <label for="editReturn">Return date (optional)</label>
-      <input id="editReturn" type="date" />
-    </div>
+      <div class="field">
+        <label for="editReturn">Return date (optional)</label>
+        <input id="editReturn" type="date" />
+      </div>
 
-    <div class="field">
-      <label for="editBg">Replace background image</label>
-      <input id="editBg" type="file" accept="image/*" />
-    </div>
+      <div class="field">
+        <label for="editBg">Replace background image</label>
+        <input id="editBg" type="file" accept="image/*" />
+      </div>
 
-    <div class="modal-actions">
-      <button id="saveEdit" class="btn primary">Save changes</button>
-      <button id="cancelEdit" class="btn secondary">Cancel</button>
+      <div class="modal-actions">
+        <button id="saveEdit" class="btn primary">Save changes</button>
+        <button id="cancelEdit" class="btn secondary">Cancel</button>
+      </div>
     </div>
   </div>
-</div>
 
-  
   <!-- Drag & Drop Sorting Library -->
   <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
   <script src="script.js"></script>
