@@ -105,6 +105,39 @@
       </div>
     </article>
   </template>
+
+  <!-- === Edit Countdown Modal === -->
+<div id="editModal" class="modal hidden">
+  <div class="modal-content">
+    <h2>Edit Countdown</h2>
+
+    <div class="field">
+      <label for="editName">Destination</label>
+      <input id="editName" type="text" required />
+    </div>
+
+    <div class="field">
+      <label for="editDate">Travel date</label>
+      <input id="editDate" type="date" required />
+    </div>
+
+    <div class="field">
+      <label for="editReturn">Return date (optional)</label>
+      <input id="editReturn" type="date" />
+    </div>
+
+    <div class="field">
+      <label for="editBg">Replace background image</label>
+      <input id="editBg" type="file" accept="image/*" />
+    </div>
+
+    <div class="modal-actions">
+      <button id="saveEdit" class="btn primary">Save changes</button>
+      <button id="cancelEdit" class="btn secondary">Cancel</button>
+    </div>
+  </div>
+</div>
+
   
   <!-- Drag & Drop Sorting Library -->
   <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
