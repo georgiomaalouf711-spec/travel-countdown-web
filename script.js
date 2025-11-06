@@ -116,6 +116,18 @@ function render(){
       weekday:'short', year:'numeric', month:'short', day:'numeric'
     });
 
+      if (item.returnDate) {
+        const returnLine = document.createElement('p');
+        returnLine.className = 'return-line';
+        const rt = new Date(item.returnDate);
+        returnLine.textContent = `Returns on ${rt.toLocaleDateString(undefined, {
+          weekday:'short', year:'numeric', month:'short', day:'numeric'
+        })}`;
+        returnLine.style.color = 'var(--muted)';
+        card.querySelector('.date-row').after(returnLine);
+      }
+
+     
     // Hook up delete
     node.querySelector('.delete').addEventListener('click', () => removeCountdown(item.id));
 
@@ -362,3 +374,69 @@ document.addEventListener("DOMContentLoaded", () => {
     },
   });
 });
+
+// === Card Editing Modal ===
+const modal = document.getElementById('editModal');
+const saveEditBtn = document.getElementById('saveEdit');
+const cancelEditBtn = document.getElementById('cancelEdit');
+let editingId = null;
+
+// Open modal when clicking on a card (but not on delete button)
+els.cards.addEventListener('click', (e) => {
+  const deleteBtn = e.target.closest('.delete');
+  if (deleteBtn) return; // ignore delete clicks
+
+  const card = e.target.closest('.card');
+  if (!card) return;
+  const id = card.dataset.id;
+  const item = state.find(x => x.id === id);
+  if (!item) return;
+
+  editingId = id;
+  document.getElementById('editName').value = item.name;
+  document.getElementById('editDate').value = item.date;
+  document.getElementById('editReturn').value = item.returnDate || '';
+  modal.classList.remove('hidden');
+});
+
+// Save changes
+saveEditBtn.addEventListener('click', () => {
+  if (!editingId) return;
+  const item = state.find(x => x.id === editingId);
+  if (!item) return;
+
+  item.name = document.getElementById('editName').value.trim();
+  item.date = document.getElementById('editDate').value;
+  item.returnDate = document.getElementById('editReturn').value || null;
+
+  const newBgFile = document.getElementById('editBg').files[0];
+  if (newBgFile) {
+    const reader = new FileReader();
+    reader.onload = () => {
+      item.background = reader.result;
+      save();
+      render();
+      modal.classList.add('hidden');
+    };
+    reader.readAsDataURL(newBgFile);
+  } else {
+    save();
+    render();
+    modal.classList.add('hidden');
+  }
+});
+
+// Cancel edit
+cancelEditBtn.addEventListener('click', () => {
+  modal.classList.add('hidden');
+  editingId = null;
+});
+
+// Close modal when clicking outside content
+modal.addEventListener('click', (e) => {
+  if (e.target === modal) {
+    modal.classList.add('hidden');
+    editingId = null;
+  }
+});
+
