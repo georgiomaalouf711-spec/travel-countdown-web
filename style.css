@@ -309,6 +309,14 @@ body.light-mode .card {
   color: #202020;
   box-shadow: 0 3px 12px rgba(0, 0, 0, 0.08);
 }
+/* 👇 Add this new block right after it */
+body.light-mode .card[style*="background-image"] {
+  background-blend-mode: normal !important;
+  background-size: cover;
+  background-position: center;
+  color: #fff;
+  text-shadow: 0 1px 4px rgba(0,0,0,0.6);
+}
 
 body.light-mode .segment {
   background: #f8f8f8;
@@ -357,3 +365,8 @@ body.light-mode .icon-btn:hover {
   text-shadow: 0 1px 4px rgba(0,0,0,0.7);
 }
 
+.return-line {
+  margin: 0.1rem 0 0.5rem;
+  font-size: 0.9rem;
+  opacity: 0.85;
+}
