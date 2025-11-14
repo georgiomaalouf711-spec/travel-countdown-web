@@ -1,132 +1,265 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Travel Countdown</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Roboto+Mono:wght@500&display=swap"
+    rel="stylesheet"
+  />
   <link rel="stylesheet" href="style.css" />
 </head>
-<body>
-  <div class="bg"></div>
+<body class="theme-light">
+  <div class="parallax-backdrop" id="parallaxBackdrop" aria-hidden="true">
+    <span class="orb orb-one"></span>
+    <span class="orb orb-two"></span>
+    <span class="orb orb-three"></span>
+  </div>
 
-  <header class="app-header">
-    <h1>✈️ Travel Countdown</h1>
-    <button id="theme-toggle" class="btn secondary">☀️ / 🌙</button>
-    <p class="subtitle">Track multiple trips with a live, animated countdown</p>
-  </header>
-
-  <main class="container">
-    <section class="controls">
-      <form id="add-form" autocomplete="off">
-        <div class="field">
-          <label for="destination">Destination</label>
-          <input id="destination" type="text" placeholder='e.g. "Tokyo Trip"' required maxlength="80" />
+  <div class="app-container">
+    <header class="app-header">
+      <div class="header-bar">
+        <div class="brand">
+          <span class="logo-mark" aria-hidden="true">✈️</span>
+          <div class="brand-copy">
+            <h1>Travel Countdown</h1>
+            <p class="subtitle">Plan your next adventure with a polished, animated countdown experience.</p>
+          </div>
         </div>
-
-        <div class="field">
-          <label for="date">Travel date</label>
-          <input id="date" type="date" required />
-        </div>
-
-        <div class="field">
-          <label for="bgUpload">Background image (optional)</label>
-          <input id="bgUpload" type="file" accept="image/*" />
-        </div>
-
-        <button class="btn primary" type="submit">Add countdown</button>
-      </form>
-
-      <div class="view-options">
-        <label for="mode">Display mode</label>
-        <select id="mode">
-          <option value="full" selected>Full breakdown (mo / wk / d / h / m / s)</option>
-          <option value="days">Days only</option>
-          <option value="hm">Hours & Minutes only</option>
-        </select>
-      </div>
-    </section>
-
-    <section class="list-wrap">
-      <div id="empty-state" class="empty">
-        <div class="empty-card">
-          <h3>No countdowns yet</h3>
-          <p>Add your first destination and travel date above.</p>
-        </div>
-      </div>
-
-      <div id="cards" class="cards"></div>
-    </section>
-  </main>
-
-  <footer class="app-footer">
-    <small>Tip: as your trip gets closer, cards will glow and the background speeds up ✨</small>
-  </footer>
-
-  <!-- Card template -->
-  <template id="card-template">
-    <article class="card">
-      <div class="card-head">
-        <h3 class="title"></h3>
-        <button class="icon-btn delete" title="Delete this countdown" aria-label="Delete">
-          <svg viewBox="0 0 24 24" width="20" height="20" role="img" aria-hidden="true">
-            <path d="M9 3h6a1 1 0 0 1 1 1v1h4v2H4V5h4V4a1 1 0 0 1 1-1Zm1 5h2v10h-2V8Zm4 0h2v10h-2V8ZM8 8h2v10H8V8Z" fill="currentColor"/>
-          </svg>
+        <button class="theme-toggle" id="themeToggle" type="button" aria-label="Toggle theme">
+          <span class="toggle-track">
+            <span class="toggle-icon sun" aria-hidden="true">☀️</span>
+            <span class="toggle-icon moon" aria-hidden="true">🌙</span>
+            <span class="toggle-thumb"></span>
+          </span>
         </button>
       </div>
+    </header>
 
-      <p class="date-row">
-        Departs on <span class="date-text"></span>
-      </p>
+    <main class="main-content">
+      <section class="panel controls-panel" id="controlsPanel">
+        <form id="tripForm" class="control-form" autocomplete="off">
+          <div class="field-group">
+            <label for="destinationInput">Destination</label>
+            <div class="input-shell icon-left">
+              <svg class="input-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path
+                  d="M12 2a7 7 0 0 0-7 7c0 4.5 6.2 12.5 6.5 12.9a.6.6 0 0 0 1 0C12.8 21 19 13.5 19 9a7 7 0 0 0-7-7Zm0 9.5A2.5 2.5 0 1 1 14.5 9 2.5 2.5 0 0 1 12 11.5Z"
+                ></path>
+              </svg>
+              <input type="text" id="destinationInput" placeholder="Where to next?" required maxlength="80" />
+            </div>
+          </div>
 
-      <div class="countdown">
-        <div class="segment months"><span class="num">0</span><span class="lbl">mo</span></div>
-        <div class="segment weeks"><span class="num">0</span><span class="lbl">wk</span></div>
-        <div class="segment days"><span class="num">0</span><span class="lbl">d</span></div>
-        <div class="segment hours"><span class="num">0</span><span class="lbl">h</span></div>
-        <div class="segment minutes"><span class="num">0</span><span class="lbl">m</span></div>
-        <div class="segment seconds"><span class="num">0</span><span class="lbl">s</span></div>
-      </div>
+          <div class="field-row">
+            <div class="field-group">
+              <label for="departureInput">Departure</label>
+              <div class="input-shell icon-left">
+                <svg class="input-icon" viewBox="0 0 24 24" aria-hidden="true">
+                  <path
+                    d="M7 3a2 2 0 0 0-2 2v1H4a1 1 0 0 0-1 1v12a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V7a1 1 0 0 0-1-1h-1V5a2 2 0 0 0-2-2h-1v2h-2V3h-4v2H9V3Zm12 8H5v8a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1Z"
+                  ></path>
+                </svg>
+                <input type="datetime-local" id="departureInput" required />
+              </div>
+            </div>
+            <div class="field-group">
+              <label for="returnInput">Return (optional)</label>
+              <div class="input-shell icon-left">
+                <svg class="input-icon" viewBox="0 0 24 24" aria-hidden="true">
+                  <path
+                    d="M7 3a2 2 0 0 0-2 2v1H4a1 1 0 0 0-1 1v12a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V7a1 1 0 0 0-1-1h-1V5a2 2 0 0 0-2-2h-1v2h-2V3h-4v2H9V3Zm12 8H5v8a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1Z"
+                  ></path>
+                </svg>
+                <input type="datetime-local" id="returnInput" />
+              </div>
+            </div>
+          </div>
 
-      <div class="status-row">
-        <span class="status"></span>
+          <div class="field-row media-row">
+            <div class="field-group upload-group">
+              <label for="backgroundInput">Background image</label>
+              <div class="input-shell file-shell">
+                <input type="file" id="backgroundInput" accept="image/*" />
+                <span class="file-label">Upload image</span>
+              </div>
+            </div>
+            <div class="thumbnail-preview" id="backgroundPreview" aria-hidden="true"></div>
+          </div>
+
+          <div class="field-row segmented-row">
+            <fieldset class="segmented-control" id="displayModeControl">
+              <legend>Display mode</legend>
+              <label class="segment">
+                <input type="radio" name="displayMode" value="full" checked />
+                <span>Full</span>
+              </label>
+              <label class="segment">
+                <input type="radio" name="displayMode" value="days" />
+                <span>Days only</span>
+              </label>
+              <label class="segment">
+                <input type="radio" name="displayMode" value="hm" />
+                <span>Hours / minutes</span>
+              </label>
+            </fieldset>
+            <button type="submit" class="btn primary" id="addTripBtn">Add trip</button>
+          </div>
+        </form>
+      </section>
+
+      <section class="next-trip-banner hidden" id="nextTripBanner">
+        <div class="banner-content">
+          <span class="banner-label">Next adventure</span>
+          <div class="banner-details">
+            <span class="banner-destination" id="bannerDestination"></span>
+            <span class="banner-countdown" id="bannerCountdown"></span>
+          </div>
+          <button class="banner-link" id="bannerButton" type="button">View countdown</button>
+        </div>
+      </section>
+
+      <section class="cards-section">
+        <div id="emptyState" class="empty-state">
+          <div class="empty-card">
+            <h2>No trips yet</h2>
+            <p>Add your destination above to start tracking your travels.</p>
+          </div>
+        </div>
+        <div id="cardCollection" class="cards-grid" aria-live="polite"></div>
+      </section>
+    </main>
+
+    <button class="floating-add" id="floatingAddButton" type="button">Add trip</button>
+  </div>
+
+  <template id="tripCardTemplate">
+    <article class="trip-card" data-trip-id="">
+      <div class="card-badge" aria-hidden="true"></div>
+      <div class="card-content">
+        <div class="card-header">
+          <div class="title-stack">
+            <h3 class="card-title"></h3>
+            <p class="card-subtitle"></p>
+          </div>
+          <div class="card-actions">
+            <button class="icon-btn edit" type="button" aria-label="Edit trip">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path
+                  d="M5 17.6V21h3.4l9.8-9.8-3.4-3.4ZM20.7 7.3a1 1 0 0 0 0-1.4l-2.6-2.6a1 1 0 0 0-1.4 0l-1.8 1.8 4 4Z"
+                ></path>
+              </svg>
+            </button>
+            <button class="icon-btn delete" type="button" aria-label="Delete trip">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path
+                  d="M9 3a1 1 0 0 0-1 1v1H4v2h1v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7h1V5h-4V4a1 1 0 0 0-1-1Zm1 5h2v10h-2Zm4 0h2v10h-2Z"
+                ></path>
+              </svg>
+            </button>
+          </div>
+        </div>
+        <div class="countdown-grid" data-mode="full">
+          <div class="time-block" data-unit="months">
+            <span class="time-value">00</span>
+            <span class="time-label">Months</span>
+          </div>
+          <div class="time-block" data-unit="weeks">
+            <span class="time-value">00</span>
+            <span class="time-label">Weeks</span>
+          </div>
+          <div class="time-block" data-unit="days">
+            <span class="time-value">00</span>
+            <span class="time-label">Days</span>
+          </div>
+          <div class="time-block" data-unit="hours">
+            <span class="time-value">00</span>
+            <span class="time-label">Hours</span>
+          </div>
+          <div class="time-block" data-unit="minutes">
+            <span class="time-value">00</span>
+            <span class="time-label">Minutes</span>
+          </div>
+          <div class="time-block" data-unit="seconds">
+            <span class="time-value">00</span>
+            <span class="time-label">Seconds</span>
+          </div>
+        </div>
+        <div class="card-dates">
+          <div class="date-line">
+            <span class="date-label">Departing</span>
+            <span class="date-value depart-date"></span>
+          </div>
+          <div class="date-line return-line">
+            <span class="date-label">Returning</span>
+            <span class="date-value return-date"></span>
+          </div>
+        </div>
       </div>
     </article>
   </template>
 
-  <!-- Edit Countdown Modal -->
-  <div id="editModal" class="modal hidden">
-    <div class="modal-content">
-      <h2>Edit Countdown</h2>
-
-      <div class="field">
-        <label for="editName">Destination</label>
-        <input id="editName" type="text" required />
-      </div>
-
-      <div class="field">
-        <label for="editDate">Travel date</label>
-        <input id="editDate" type="date" required />
-      </div>
-
-      <div class="field">
-        <label for="editReturn">Return date (optional)</label>
-        <input id="editReturn" type="date" />
-      </div>
-
-      <div class="field">
-        <label for="editBg">Replace background image</label>
-        <input id="editBg" type="file" accept="image/*" />
-      </div>
-
-      <div class="modal-actions">
-        <button id="saveEdit" class="btn primary">Save changes</button>
-        <button id="cancelEdit" class="btn secondary">Cancel</button>
-      </div>
+  <div class="modal hidden" id="editModal" role="dialog" aria-modal="true" aria-labelledby="editModalTitle">
+    <div class="modal-dialog">
+      <button class="modal-close" type="button" id="closeEditModal" aria-label="Close edit dialog">&times;</button>
+      <h2 id="editModalTitle">Edit trip</h2>
+      <form id="editForm" class="modal-form">
+        <div class="field-group">
+          <label for="editDestination">Destination</label>
+          <div class="input-shell icon-left">
+            <svg class="input-icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path
+                d="M12 2a7 7 0 0 0-7 7c0 4.5 6.2 12.5 6.5 12.9a.6.6 0 0 0 1 0C12.8 21 19 13.5 19 9a7 7 0 0 0-7-7Zm0 9.5A2.5 2.5 0 1 1 14.5 9 2.5 2.5 0 0 1 12 11.5Z"
+              ></path>
+            </svg>
+            <input type="text" id="editDestination" required maxlength="80" />
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="field-group">
+            <label for="editDeparture">Departure</label>
+            <div class="input-shell icon-left">
+              <svg class="input-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path
+                  d="M7 3a2 2 0 0 0-2 2v1H4a1 1 0 0 0-1 1v12a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V7a1 1 0 0 0-1-1h-1V5a2 2 0 0 0-2-2h-1v2h-2V3h-4v2H9V3Zm12 8H5v8a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1Z"
+                ></path>
+              </svg>
+              <input type="datetime-local" id="editDeparture" required />
+            </div>
+          </div>
+          <div class="field-group">
+            <label for="editReturn">Return (optional)</label>
+            <div class="input-shell icon-left">
+              <svg class="input-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path
+                  d="M7 3a2 2 0 0 0-2 2v1H4a1 1 0 0 0-1 1v12a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V7a1 1 0 0 0-1-1h-1V5a2 2 0 0 0-2-2h-1v2h-2V3h-4v2H9V3Zm12 8H5v8a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1Z"
+                ></path>
+              </svg>
+              <input type="datetime-local" id="editReturn" />
+            </div>
+          </div>
+        </div>
+        <div class="field-row media-row">
+          <div class="field-group upload-group">
+            <label for="editBackground">Background image</label>
+            <div class="input-shell file-shell">
+              <input type="file" id="editBackground" accept="image/*" />
+              <span class="file-label">Replace image</span>
+            </div>
+          </div>
+          <div class="thumbnail-preview" id="editBackgroundPreview" aria-hidden="true"></div>
+        </div>
+        <div class="modal-actions">
+          <button type="submit" class="btn primary">Save changes</button>
+          <button type="button" class="btn secondary" id="cancelEdit">Cancel</button>
+        </div>
+      </form>
     </div>
   </div>
 
-  <!-- Drag & Drop Sorting Library -->
-  <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
-  <script src="script.js"></script>
+  <script src="script.js" defer></script>
 </body>
 </html>
