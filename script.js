@@ -1,363 +1,773 @@
-/* Travel Countdown App
-   - Multiple countdowns with localStorage
-   - Live updates each second
-   - Display modes: full | days | hm
-   - Proximity-based animations + background speed scaling
-*/
+(() => {
+  const storageKey = 'travelCountdown.trips.v2';
+  const legacyStorageKey = 'travel-countdowns/v1';
+  const themeKey = 'travelCountdown.theme';
+  const modeKey = 'travelCountdown.mode';
 
-const els = {
-  form: document.getElementById('add-form'),
-  destination: document.getElementById('destination'),
-  date: document.getElementById('date'),
-  cards: document.getElementById('cards'),
-  empty: document.getElementById('empty-state'),
-  mode: document.getElementById('mode'),
-  template: document.getElementById('card-template'),
-  root: document.documentElement,
-};
+  const elements = {
+    form: document.getElementById('tripForm'),
+    destination: document.getElementById('destinationInput'),
+    departure: document.getElementById('departureInput'),
+    returnDate: document.getElementById('returnInput'),
+    background: document.getElementById('backgroundInput'),
+    backgroundPreview: document.getElementById('backgroundPreview'),
+    displayModeRadios: document.querySelectorAll('#displayModeControl input[name="displayMode"]'),
+    addButton: document.getElementById('addTripBtn'),
+    banner: document.getElementById('nextTripBanner'),
+    bannerDestination: document.getElementById('bannerDestination'),
+    bannerCountdown: document.getElementById('bannerCountdown'),
+    bannerButton: document.getElementById('bannerButton'),
+    emptyState: document.getElementById('emptyState'),
+    cards: document.getElementById('cardCollection'),
+    template: document.getElementById('tripCardTemplate'),
+    themeToggle: document.getElementById('themeToggle'),
+    floatingAdd: document.getElementById('floatingAddButton'),
+    controlsPanel: document.getElementById('controlsPanel'),
+    modal: document.getElementById('editModal'),
+    editForm: document.getElementById('editForm'),
+    editDestination: document.getElementById('editDestination'),
+    editDeparture: document.getElementById('editDeparture'),
+    editReturn: document.getElementById('editReturn'),
+    editBackground: document.getElementById('editBackground'),
+    editPreview: document.getElementById('editBackgroundPreview'),
+    closeModal: document.getElementById('closeEditModal'),
+    cancelEdit: document.getElementById('cancelEdit'),
+    parallax: document.getElementById('parallaxBackdrop')
+  };
 
-// Set min date = today
-(function setMinDate(){
-  const today = new Date();
-  const yyyy = today.getFullYear();
-  const mm = String(today.getMonth()+1).padStart(2,'0');
-  const dd = String(today.getDate()).padStart(2,'0');
-  els.date.min = `${yyyy}-${mm}-${dd}`;
-})();
+  const rtf = new Intl.RelativeTimeFormat(undefined, { numeric: 'auto' });
+  const dateFormatter = new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' });
 
-const STORAGE_KEY = 'travel-countdowns/v1';
+  const state = {
+    trips: [],
+    displayMode: 'full',
+    addBackground: null,
+    editBackground: null,
+    countdownRefs: new Map(),
+    nextTripId: null,
+    lastTick: 0
+  };
 
-let state = load() || [];
-let tickTimer = null;
+  let activeEditId = null;
 
-function save(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
-function load(){ try { return JSON.parse(localStorage.getItem(STORAGE_KEY)); } catch { return []; } }
-function uid(){ return Math.random().toString(36).slice(2,9); }
-
-function addCountdown(name, dateISO, bgDataUrl = null) {
-  state.push({
-    id: uid(),
-    name: name.trim(),
-    date: dateISO,
-    background: bgDataUrl || null,
-    returnDate: null,
-    createdAt: new Date().toISOString(),
-  });
-  save();
-  render();
-}
-
-function removeCountdown(id){
-  state = state.filter(x => x.id !== id);
-  save();
-  render();
-}
-
-els.form.addEventListener('submit', (e) => {
-  e.preventDefault();
-  const name = els.destination.value.trim();
-  const dateISO = els.date.value;
-  const bgFile = document.getElementById('bgUpload').files[0];
-  if (!name || !dateISO) return;
-
-  if (bgFile) {
-    const reader = new FileReader();
-    reader.onload = () => addCountdown(name, dateISO, reader.result);
-    reader.readAsDataURL(bgFile);
-  } else {
-    addCountdown(name, dateISO, null);
+  function init() {
+    loadTheme();
+    loadDisplayMode();
+    loadTrips();
+    bindEvents();
+    renderTrips();
+    startTicker();
+    initParallax();
   }
 
-  els.form.reset();
-  els.destination.focus();
-});
+  function bindEvents() {
+    elements.form.addEventListener('submit', handleAddTrip);
+    elements.background.addEventListener('change', handleAddBackgroundChange);
 
-els.mode.addEventListener('change', render);
-
-function render(){
-  // Empty state
-  els.empty.style.display = state.length ? 'none' : 'block';
-  els.cards.innerHTML = '';
-
-  // Rebuild all cards
-  for(const item of state){
-    const node = document.importNode(els.template.content, true);
-    const card = node.querySelector('.card');
-    card.dataset.id = item.id;
-
-    // Apply background image if present
-    if (item.background) {
-      card.style.backgroundImage = `url('${item.background}')`;
-      card.style.backgroundSize = "cover";
-      card.style.backgroundPosition = "center";
-      card.style.color = "#fff";
-      card.style.textShadow = "0 1px 3px rgba(0,0,0,0.6)";
-    }
-
-    // Title
-    node.querySelector('.title').textContent = item.name;
-
-    // Departure date
-    const dateText = node.querySelector('.date-text');
-    const t = new Date(item.date + 'T00:00:00');
-    dateText.textContent = t.toLocaleDateString(undefined, { weekday:'short', year:'numeric', month:'short', day:'numeric' });
-
-    // Optional return date line
-    if (item.returnDate) {
-      const returnLine = document.createElement('p');
-      returnLine.className = 'return-line';
-      const rt = new Date(item.returnDate);
-      returnLine.textContent = `Returns on ${rt.toLocaleDateString(undefined, { weekday:'short', year:'numeric', month:'short', day:'numeric' })}`;
-      returnLine.style.color = 'var(--muted)';
-      card.querySelector('.date-row').after(returnLine);
-    }
-
-    // Delete handler
-    node.querySelector('.delete').addEventListener('click', (ev) => {
-      ev.stopPropagation();           // prevent opening modal when pressing delete
-      removeCountdown(item.id);
+    elements.displayModeRadios.forEach((radio) => {
+      radio.addEventListener('change', (event) => {
+        if (event.target.checked) {
+          state.displayMode = event.target.value;
+          localStorage.setItem(modeKey, state.displayMode);
+          applyDisplayMode();
+          refreshBannerCountdown();
+        }
+      });
     });
 
-    // Initial numbers + mode
-    updateCardDisplay(card, item);
-    applyMode(card);
+    elements.themeToggle.addEventListener('click', toggleTheme);
+    elements.floatingAdd.addEventListener('click', () => {
+      elements.controlsPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
 
-    els.cards.appendChild(node);
+    elements.banner.addEventListener('click', scrollToNextTrip);
+    elements.bannerButton.addEventListener('click', (event) => {
+      event.stopPropagation();
+      scrollToNextTrip();
+    });
+
+    elements.modal.addEventListener('click', (event) => {
+      if (event.target === elements.modal) {
+        closeEditModal();
+      }
+    });
+    elements.closeModal.addEventListener('click', closeEditModal);
+    elements.cancelEdit.addEventListener('click', closeEditModal);
+    elements.editForm.addEventListener('submit', handleEditSubmit);
+    elements.editBackground.addEventListener('change', handleEditBackgroundChange);
+
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape' && !elements.modal.classList.contains('hidden')) {
+        closeEditModal();
+      }
+    });
   }
 
-  // Tick refresh
-  if(tickTimer) clearInterval(tickTimer);
-  tickTimer = setInterval(tick, 1000);
-
-  // Background speed based on nearest trip
-  adjustBackgroundSpeed();
-}
-
-function applyMode(card){
-  const mode = els.mode.value;
-  card.classList.remove('mode-full','mode-days','mode-hm');
-  card.classList.add(`mode-${mode}`);
-}
-
-function tick(){
-  const cards = els.cards.querySelectorAll('.card');
-  cards.forEach(card => {
-    const id = card.dataset.id;
-    const item = state.find(x => x.id === id);
-    if(item) updateCardDisplay(card, item);
-    applyMode(card);
-  });
-  adjustBackgroundSpeed();
-}
-
-function adjustBackgroundSpeed(){
-  let minSecs = Infinity;
-  const now = new Date();
-  for(const item of state){
-    const target = new Date(item.date + 'T00:00:00');
-    const diff = (target - now) / 1000;
-    if(diff > 0 && diff < minSecs) minSecs = diff;
-  }
-  let speed = '35s';
-  if(minSecs < 6*3600) speed = '12s';
-  else if(minSecs < 24*3600) speed = '18s';
-  else if(minSecs < 7*24*3600) speed = '26s';
-  els.root.style.setProperty('--bg-speed', speed);
-}
-
-/* ====== Time math ====== */
-function addMonths(date, count){
-  const d = new Date(date);
-  const day = d.getDate();
-  d.setDate(1);
-  d.setMonth(d.getMonth() + count);
-  const monthDays = new Date(d.getFullYear(), d.getMonth()+1, 0).getDate();
-  d.setDate(Math.min(day, monthDays));
-  return d;
-}
-
-function diffBreakdown(now, target){
-  if(target <= now){
-    return { months:0, weeks:0, days:0, hours:0, minutes:0, seconds:0, ms:0, done:true };
-  }
-  let months = 0;
-  let cursor = new Date(now);
-  const approxMonths = Math.max(0, (target.getFullYear()-now.getFullYear())*12 + (target.getMonth()-now.getMonth()) - 1);
-  if(approxMonths > 0){
-    months = approxMonths;
-    cursor = addMonths(cursor, approxMonths);
-    if(cursor > target){ months = 0; cursor = new Date(now); }
-  }
-  let guard = 0;
-  while(addMonths(cursor, 1) <= target && guard < 24){
-    cursor = addMonths(cursor, 1); months++; guard++;
+  function loadTheme() {
+    const saved = localStorage.getItem(themeKey);
+    const theme = saved === 'dark' ? 'dark' : 'light';
+    applyTheme(theme);
   }
 
-  let remainder = target - cursor;
-  const SEC = 1000, MIN = 60*SEC, HOUR = 60*MIN, DAY = 24*HOUR, WEEK = 7*DAY;
-
-  const weeks   = Math.floor(remainder / WEEK);   remainder -= weeks * WEEK;
-  const days    = Math.floor(remainder / DAY);    remainder -= days * DAY;
-  const hours   = Math.floor(remainder / HOUR);   remainder -= hours * HOUR;
-  const minutes = Math.floor(remainder / MIN);    remainder -= minutes * MIN;
-  const seconds = Math.floor(remainder / SEC);    remainder -= seconds * SEC;
-
-  return { months, weeks, days, hours, minutes, seconds, ms: remainder, done:false };
-}
-
-function formatForMode(b, mode){
-  if(mode === 'days'){
-    const totalDays = b.months*30 + b.weeks*7 + b.days + (b.hours || b.minutes || b.seconds ? 1 : 0);
-    return [{label:'d', value: Math.max(totalDays, 0), key:'days'}];
-  }
-  if(mode === 'hm'){
-    const hours = b.months*30*24 + b.weeks*7*24 + b.days*24 + b.hours;
-    return [
-      {label:'h', value: Math.max(hours,0), key:'hours'},
-      {label:'m', value: Math.max(b.minutes,0), key:'minutes'},
-    ];
-  }
-  return [
-    {label:'mo', value:b.months, key:'months'},
-    {label:'wk', value:b.weeks, key:'weeks'},
-    {label:'d',  value:b.days, key:'days'},
-    {label:'h',  value:b.hours, key:'hours'},
-    {label:'m',  value:b.minutes, key:'minutes'},
-    {label:'s',  value:b.seconds, key:'seconds'},
-  ];
-}
-
-/* Update a single card’s numbers and styles */
-function updateCardDisplay(card, item){
-  const now = new Date();
-  const target = new Date(item.date + 'T00:00:00');
-  const breakdown = diffBreakdown(now, target);
-
-  const mode = els.mode.value;
-  const map = formatForMode(breakdown, mode);
-
-  ['months','weeks','days','hours','minutes','seconds'].forEach(key => {
-    const seg = card.querySelector(`.segment.${key} .num`);
-    if(seg) seg.textContent = '0';
-  });
-
-  for(const part of map){
-    const el = card.querySelector(`.segment.${part.key} .num`);
-    if(el) el.textContent = String(part.value);
+  function toggleTheme() {
+    const theme = document.body.classList.contains('theme-dark') ? 'light' : 'dark';
+    applyTheme(theme);
   }
 
-  const status = card.querySelector('.status');
-  card.classList.remove('soon','urgent','imminent','done');
-  if(breakdown.done){
-    status.textContent = 'Bon voyage! 🎉';
-    card.classList.add('done');
-  }else{
-    const secsLeft = Math.floor((target - now)/1000);
-    status.textContent = humanEta(secsLeft);
-    if(secsLeft <= 6*3600) card.classList.add('imminent');
-    else if(secsLeft <= 24*3600) card.classList.add('urgent');
-    else if(secsLeft <= 30*24*3600) card.classList.add('soon');
+  function applyTheme(theme) {
+    document.body.classList.toggle('theme-dark', theme === 'dark');
+    document.body.classList.toggle('theme-light', theme !== 'dark');
+    localStorage.setItem(themeKey, theme);
   }
-}
 
-function humanEta(secs){
-  if(secs <= 0) return 'now';
-  const units = [['y',31536000],['mo',2592000],['w',604800],['d',86400],['h',3600],['m',60],['s',1]];
-  let remain = secs; const parts = [];
-  for(const [lbl, size] of units){
-    const v = Math.floor(remain / size);
-    if(v > 0){ parts.push(`${v}${lbl}`); remain -= v*size; }
-    if(parts.length >= 2) break;
+  function loadDisplayMode() {
+    const saved = localStorage.getItem(modeKey);
+    if (saved && ['full', 'days', 'hm'].includes(saved)) {
+      state.displayMode = saved;
+      elements.displayModeRadios.forEach((radio) => {
+        radio.checked = radio.value === saved;
+      });
+    }
   }
-  return 'in ' + (parts.join(' ') || '0s');
-}
 
-/* Initial render */
-render();
+  function loadTrips() {
+    state.trips = [];
+    try {
+      const stored = JSON.parse(localStorage.getItem(storageKey) || '[]');
+      if (Array.isArray(stored) && stored.length) {
+        const normalized = stored.map((trip, index) => normalizeTrip(trip, index)).filter(Boolean);
+        if (normalized.length) {
+          state.trips = normalized;
+          return;
+        }
+      }
+    } catch (error) {
+      console.error('Failed to parse saved trips', error);
+      state.trips = [];
+    }
 
-/* Sheen follows mouse */
-document.addEventListener('mousemove', (e) => {
-  const x = (e.clientX / window.innerWidth) * 100;
-  const y = (e.clientY / window.innerHeight) * 100;
-  document.querySelectorAll('.card').forEach(card => {
-    card.style.setProperty('--sx', `${x}%`);
-    card.style.setProperty('--sy', `${y}%`);
-  });
-});
+    const migrated = migrateLegacyTrips();
+    if (migrated.length) {
+      state.trips = migrated;
+      saveTrips();
+      localStorage.removeItem(legacyStorageKey);
+    }
+  }
 
-/* Theme toggle */
-const themeToggle = document.getElementById('theme-toggle');
-themeToggle.addEventListener('click', () => {
-  document.body.classList.toggle('light-mode');
-  localStorage.setItem('theme', document.body.classList.contains('light-mode') ? 'light' : 'dark');
-});
-if (localStorage.getItem('theme') === 'light') document.body.classList.add('light-mode');
+  function normalizeTrip(trip, index = 0) {
+    const destination =
+      (typeof trip.destination === 'string' && trip.destination.trim())
+        ? trip.destination.trim()
+        : extractDestination(trip, index);
 
-/* Drag & Drop Sorting */
-document.addEventListener("DOMContentLoaded", () => {
-  const cardsContainer = document.getElementById("cards");
-  Sortable.create(cardsContainer, {
-    animation: 150,
-    ghostClass: "drag-ghost",
-    onEnd: () => {
-      const newOrder = Array.from(cardsContainer.children).map(c => c.dataset.id);
-      state.sort((a, b) => newOrder.indexOf(a.id) - newOrder.indexOf(b.id));
-      save();
-    },
-  });
-});
+    const departure =
+      parseDateValue(trip.departure) ||
+      parseDateValue(trip.departureDate) ||
+      parseDateValue(trip.date) ||
+      parseDateValue(trip.startDate) ||
+      parseDateValue(trip.when);
 
-/* Card Editing Modal */
-const modal = document.getElementById('editModal');
-const saveEditBtn = document.getElementById('saveEdit');
-const cancelEditBtn = document.getElementById('cancelEdit');
-let editingId = null;
+    if (!departure) {
+      return null;
+    }
 
-// Open modal when clicking on a card (ignore delete clicks)
-els.cards.addEventListener('click', (e) => {
-  const deleteBtn = e.target.closest('.delete');
-  if (deleteBtn) return;
+    const returnDate =
+      parseDateValue(trip.returnDate) ||
+      parseDateValue(trip.returnDateValue) ||
+      parseDateValue(trip.endDate) ||
+      parseDateValue(trip.arrival);
 
-  const card = e.target.closest('.card');
-  if (!card) return;
+    const background = trip.background || trip.backgroundImage || trip.image || null;
 
-  const id = card.dataset.id;
-  const item = state.find(x => x.id === id);
-  if (!item) return;
+    const createdAt = parseDateValue(trip.createdAt) || new Date().toISOString();
 
-  editingId = id;
-  document.getElementById('editName').value = item.name;
-  document.getElementById('editDate').value = item.date;
-  document.getElementById('editReturn').value = item.returnDate || '';
-  document.getElementById('editBg').value = '';
-  modal.classList.remove('hidden');
-});
-
-// Save changes
-saveEditBtn.addEventListener('click', () => {
-  if (!editingId) return;
-  const item = state.find(x => x.id === editingId);
-  if (!item) return;
-
-  item.name = document.getElementById('editName').value.trim();
-  item.date = document.getElementById('editDate').value;
-  item.returnDate = document.getElementById('editReturn').value || null;
-
-  const newBgFile = document.getElementById('editBg').files[0];
-  if (newBgFile) {
-    const reader = new FileReader();
-    reader.onload = () => {
-      item.background = reader.result;
-      save(); render(); modal.classList.add('hidden');
+    return {
+      ...trip,
+      id: trip.id || createId(),
+      destination,
+      departure,
+      returnDate,
+      background,
+      tint: background ? null : trip.tint || generateGradient(destination),
+      createdAt
     };
-    reader.readAsDataURL(newBgFile);
-  } else {
-    save(); render(); modal.classList.add('hidden');
   }
-});
 
-// Cancel edit or click outside
-cancelEditBtn.addEventListener('click', () => { modal.classList.add('hidden'); editingId = null; });
-modal.addEventListener('click', (e) => {
-  if (e.target === modal) { modal.classList.add('hidden'); editingId = null; }
-});
+  function migrateLegacyTrips() {
+    try {
+      const raw = localStorage.getItem(legacyStorageKey);
+      if (!raw) return [];
+
+      const parsed = JSON.parse(raw);
+      const legacyTrips = Array.isArray(parsed)
+        ? parsed
+        : Array.isArray(parsed?.trips)
+        ? parsed.trips
+        : [];
+
+      const migrated = legacyTrips
+        .map((trip, index) => {
+          const destination = extractDestination(trip, index);
+          const departure =
+            parseDateValue(trip.departure) ||
+            parseDateValue(trip.departureDate) ||
+            parseDateValue(trip.date) ||
+            parseDateValue(trip.startDate) ||
+            parseDateValue(trip.when);
+
+          if (!departure) {
+            return null;
+          }
+
+          const returnDate =
+            parseDateValue(trip.returnDate) ||
+            parseDateValue(trip.endDate) ||
+            parseDateValue(trip.arrival);
+
+          const background =
+            trip.background || trip.backgroundImage || trip.image || trip.photo || null;
+
+          const seeded = {
+            ...trip,
+            id: trip.id,
+            destination,
+            departure,
+            returnDate,
+            background,
+            tint: background ? null : trip.tint,
+            createdAt: parseDateValue(trip.createdAt) || new Date().toISOString()
+          };
+
+          return normalizeTrip(seeded, index);
+        })
+        .filter(Boolean);
+
+      return migrated;
+    } catch (error) {
+      console.error('Failed to migrate legacy trips', error);
+      return [];
+    }
+  }
+
+  function extractDestination(trip, index) {
+    const fallback = `Trip ${index + 1}`;
+    if (typeof trip?.destination === 'string' && trip.destination.trim()) {
+      return trip.destination.trim();
+    }
+    if (typeof trip?.title === 'string' && trip.title.trim()) {
+      return trip.title.trim();
+    }
+    if (typeof trip?.name === 'string' && trip.name.trim()) {
+      return trip.name.trim();
+    }
+    return fallback;
+  }
+
+  function parseDateValue(value) {
+    if (!value) return null;
+
+    if (typeof value === 'number') {
+      const date = new Date(value);
+      return Number.isNaN(date.getTime()) ? null : date.toISOString();
+    }
+
+    if (typeof value === 'string') {
+      const trimmed = value.trim();
+      if (!trimmed) return null;
+
+      const numeric = Number(trimmed);
+      if (!Number.isNaN(numeric) && /^\d+$/.test(trimmed) && trimmed.length >= 8) {
+        const date = new Date(numeric);
+        if (!Number.isNaN(date.getTime())) {
+          return date.toISOString();
+        }
+      }
+
+      const parsed = new Date(trimmed);
+      if (!Number.isNaN(parsed.getTime())) {
+        return parsed.toISOString();
+      }
+    }
+
+    return null;
+  }
+
+  function saveTrips() {
+    localStorage.setItem(storageKey, JSON.stringify(state.trips));
+  }
+
+  function handleAddTrip(event) {
+    event.preventDefault();
+    const destination = elements.destination.value.trim();
+    const departureValue = elements.departure.value;
+    if (!destination || !departureValue) return;
+
+    const departure = new Date(departureValue);
+    if (Number.isNaN(departure.getTime())) return;
+
+    const returnValue = elements.returnDate.value;
+    const returnDate = returnValue ? new Date(returnValue) : null;
+    if (returnDate && returnDate < departure) {
+      return;
+    }
+
+    const trip = {
+      id: createId(),
+      destination,
+      departure: departure.toISOString(),
+      returnDate: returnDate ? returnDate.toISOString() : null,
+      background: state.addBackground,
+      tint: state.addBackground ? null : generateGradient(destination),
+      createdAt: new Date().toISOString()
+    };
+
+    state.trips.push(trip);
+    state.trips.sort((a, b) => new Date(a.departure) - new Date(b.departure));
+    saveTrips();
+    resetAddForm();
+    renderTrips();
+  }
+
+  function handleAddBackgroundChange(event) {
+    const file = event.target.files?.[0];
+    if (!file) {
+      state.addBackground = null;
+      updatePreview(elements.backgroundPreview, null);
+      return;
+    }
+
+    readFile(file, (dataUrl) => {
+      state.addBackground = dataUrl;
+      updatePreview(elements.backgroundPreview, dataUrl);
+    });
+  }
+
+  function resetAddForm() {
+    elements.form.reset();
+    state.addBackground = null;
+    updatePreview(elements.backgroundPreview, null);
+  }
+
+  function renderTrips() {
+    elements.cards.innerHTML = '';
+    state.countdownRefs.clear();
+
+    if (!state.trips.length) {
+      elements.emptyState.classList.add('active');
+      elements.banner.classList.add('hidden');
+      state.nextTripId = null;
+      return;
+    }
+
+    elements.emptyState.classList.remove('active');
+
+    const sorted = [...state.trips].sort((a, b) => new Date(a.departure) - new Date(b.departure));
+    state.trips = sorted;
+
+    sorted.forEach((trip) => {
+      const card = buildTripCard(trip);
+      elements.cards.appendChild(card.cardElement);
+      state.countdownRefs.set(trip.id, {
+        trip,
+        card: card.cardElement,
+        countdown: card.countdown,
+        blocks: card.blocks,
+        departureTs: new Date(trip.departure).getTime()
+      });
+    });
+
+    applyDisplayMode();
+    determineNextTrip();
+    refreshBannerCountdown();
+    updateCountdowns(true);
+  }
+
+  function buildTripCard(trip) {
+    const clone = elements.template.content.firstElementChild.cloneNode(true);
+    const card = clone;
+    card.dataset.tripId = trip.id;
+    card.id = `trip-card-${trip.id}`;
+
+    const backgroundImage = trip.background || trip.tint || generateGradient(trip.destination);
+    if (backgroundImage.startsWith('linear-gradient')) {
+      card.style.setProperty('--card-image', backgroundImage);
+    } else {
+      card.style.setProperty('--card-image', `url(${backgroundImage})`);
+    }
+
+    card.querySelector('.card-title').textContent = trip.destination;
+    const subtitle = card.querySelector('.card-subtitle');
+    subtitle.textContent = formatDepartureSubtitle(new Date(trip.departure).getTime() - Date.now());
+
+    const departEl = card.querySelector('.depart-date');
+    departEl.textContent = formatDisplayDate(trip.departure);
+
+    const returnEl = card.querySelector('.return-date');
+    if (trip.returnDate) {
+      returnEl.textContent = formatDisplayDate(trip.returnDate);
+      card.dataset.hasReturn = 'true';
+    } else {
+      card.dataset.hasReturn = 'false';
+    }
+
+    const countdown = card.querySelector('.countdown-grid');
+    const blocks = {
+      months: countdown.querySelector('[data-unit="months"] .time-value'),
+      weeks: countdown.querySelector('[data-unit="weeks"] .time-value'),
+      days: countdown.querySelector('[data-unit="days"] .time-value'),
+      hours: countdown.querySelector('[data-unit="hours"] .time-value'),
+      minutes: countdown.querySelector('[data-unit="minutes"] .time-value'),
+      seconds: countdown.querySelector('[data-unit="seconds"] .time-value')
+    };
+
+    const editBtn = card.querySelector('.icon-btn.edit');
+    const deleteBtn = card.querySelector('.icon-btn.delete');
+    editBtn.addEventListener('click', () => openEditModal(trip.id));
+    deleteBtn.addEventListener('click', () => deleteTrip(trip.id));
+
+    return { cardElement: card, countdown, blocks };
+  }
+
+  function applyDisplayMode() {
+    state.countdownRefs.forEach((ref) => {
+      ref.countdown.dataset.mode = state.displayMode;
+    });
+  }
+
+  function determineNextTrip() {
+    const now = Date.now();
+    const upcoming = state.trips.filter((trip) => new Date(trip.departure).getTime() > now);
+    if (!upcoming.length) {
+      state.nextTripId = null;
+      elements.banner.classList.add('hidden');
+      return;
+    }
+
+    upcoming.sort((a, b) => new Date(a.departure) - new Date(b.departure));
+    const next = upcoming[0];
+    state.nextTripId = next.id;
+    elements.bannerDestination.textContent = next.destination;
+    elements.banner.classList.remove('hidden');
+  }
+
+  function refreshBannerCountdown() {
+    if (!state.nextTripId) return;
+    const trip = state.trips.find((item) => item.id === state.nextTripId);
+    if (!trip) return;
+
+    const diff = new Date(trip.departure).getTime() - Date.now();
+    if (diff <= 0) {
+      elements.bannerCountdown.textContent = 'Departing now';
+      return;
+    }
+    const parts = calculateParts(diff);
+    elements.bannerCountdown.textContent = formatBanner(parts);
+  }
+
+  function updateCountdowns(force = false) {
+    const now = Date.now();
+    if (!force && state.lastTick && now - state.lastTick < 900) {
+      return;
+    }
+    state.lastTick = now;
+
+    let needsNextTripUpdate = false;
+    state.countdownRefs.forEach((ref) => {
+      const diff = ref.departureTs - now;
+      const parts = calculateParts(diff);
+      const proximity = getProximity(diff);
+      const status = diff <= 0 ? 'past' : 'upcoming';
+
+      ref.card.dataset.proximity = proximity;
+      ref.card.dataset.status = status;
+      const subtitle = ref.card.querySelector('.card-subtitle');
+      subtitle.textContent = formatDepartureSubtitle(diff);
+
+      setTimeValue(ref.blocks.months, parts.months);
+      setTimeValue(ref.blocks.weeks, parts.weeks);
+      setTimeValue(ref.blocks.days, parts.days);
+      setTimeValue(ref.blocks.hours, parts.hours);
+      setTimeValue(ref.blocks.minutes, parts.minutes);
+      setTimeValue(ref.blocks.seconds, parts.seconds);
+
+      if (ref.card.dataset.tripId === state.nextTripId && diff > 0) {
+        ref.card.setAttribute('data-badge', 'next');
+      } else if (diff > 0 && parts.totalDays <= 14) {
+        ref.card.setAttribute('data-badge', 'soon');
+      } else {
+        ref.card.removeAttribute('data-badge');
+      }
+
+      if (ref.card.dataset.tripId === state.nextTripId && diff <= 0) {
+        needsNextTripUpdate = true;
+      }
+    });
+
+    if (needsNextTripUpdate) {
+      determineNextTrip();
+    }
+
+    refreshBannerCountdown();
+  }
+
+  function setTimeValue(element, value) {
+    if (!element) return;
+    const formatted = String(Math.max(0, value)).padStart(2, '0');
+    if (element.dataset.value === formatted) return;
+    element.dataset.value = formatted;
+    element.textContent = formatted;
+    element.classList.add('animate');
+    setTimeout(() => element.classList.remove('animate'), 250);
+  }
+
+  function calculateParts(diffMs) {
+    const clamped = Math.max(0, diffMs);
+    const totalSeconds = Math.floor(clamped / 1000);
+    let remainder = totalSeconds;
+
+    const months = Math.floor(remainder / (30 * 24 * 3600));
+    remainder -= months * 30 * 24 * 3600;
+    const weeks = Math.floor(remainder / (7 * 24 * 3600));
+    remainder -= weeks * 7 * 24 * 3600;
+    const days = Math.floor(remainder / (24 * 3600));
+    remainder -= days * 24 * 3600;
+    const hours = Math.floor(remainder / 3600);
+    remainder -= hours * 3600;
+    const minutes = Math.floor(remainder / 60);
+    remainder -= minutes * 60;
+    const seconds = remainder;
+
+    return {
+      months,
+      weeks,
+      days,
+      hours,
+      minutes,
+      seconds,
+      totalDays: Math.floor(totalSeconds / (24 * 3600))
+    };
+  }
+
+  function formatBanner(parts) {
+    if (parts.months) {
+      return `${parts.months} mo · ${parts.weeks} wk`;
+    }
+    if (parts.weeks) {
+      return `${parts.weeks} wk · ${parts.days} d`;
+    }
+    if (parts.days) {
+      return `${parts.days} d · ${parts.hours} h`;
+    }
+    if (parts.hours) {
+      return `${parts.hours} h · ${parts.minutes} m`;
+    }
+    return `${Math.max(parts.minutes, 0)} m · ${parts.seconds} s`;
+  }
+
+  function formatDepartureSubtitle(diff) {
+    if (diff <= -60000) {
+      return `Departed ${formatRelativeTime(diff)}`;
+    }
+    if (diff < 60000 && diff > -60000) {
+      return 'Departing now';
+    }
+    return `Leaves ${formatRelativeTime(diff)}`;
+  }
+
+  function formatRelativeTime(diff) {
+    const seconds = Math.round(diff / 1000);
+    const absSeconds = Math.abs(seconds);
+    if (absSeconds >= 86400) {
+      return rtf.format(Math.trunc(seconds / 86400), 'day');
+    }
+    if (absSeconds >= 3600) {
+      return rtf.format(Math.trunc(seconds / 3600), 'hour');
+    }
+    if (absSeconds >= 60) {
+      return rtf.format(Math.trunc(seconds / 60), 'minute');
+    }
+    return rtf.format(seconds, 'second');
+  }
+
+  function formatDisplayDate(value) {
+    if (!value) return '—';
+    try {
+      return dateFormatter.format(new Date(value));
+    } catch (error) {
+      return value;
+    }
+  }
+
+  function getProximity(diff) {
+    if (diff <= 0) return 'past';
+    const day = 24 * 3600 * 1000;
+    if (diff <= day) return 'imminent';
+    if (diff <= 3 * day) return 'urgent';
+    if (diff <= 14 * day) return 'soon';
+    return 'distant';
+  }
+
+  function deleteTrip(id) {
+    const index = state.trips.findIndex((trip) => trip.id === id);
+    if (index === -1) return;
+    const confirmed = window.confirm('Delete this trip countdown?');
+    if (!confirmed) return;
+    state.trips.splice(index, 1);
+    saveTrips();
+    renderTrips();
+  }
+
+  function openEditModal(id) {
+    const trip = state.trips.find((item) => item.id === id);
+    if (!trip) return;
+    activeEditId = id;
+    elements.editDestination.value = trip.destination;
+    elements.editDeparture.value = toLocalInputValue(trip.departure);
+    elements.editReturn.value = toLocalInputValue(trip.returnDate);
+    state.editBackground = null;
+    updatePreview(elements.editPreview, trip.background || trip.tint);
+    elements.modal.classList.remove('hidden');
+  }
+
+  function closeEditModal() {
+    elements.modal.classList.add('hidden');
+    elements.editForm.reset();
+    updatePreview(elements.editPreview, null);
+    state.editBackground = null;
+    activeEditId = null;
+  }
+
+  function handleEditSubmit(event) {
+    event.preventDefault();
+    if (!activeEditId) return;
+    const trip = state.trips.find((item) => item.id === activeEditId);
+    if (!trip) return;
+
+    const destination = elements.editDestination.value.trim();
+    const departure = new Date(elements.editDeparture.value);
+    if (!destination || Number.isNaN(departure.getTime())) {
+      return;
+    }
+
+    const returnValue = elements.editReturn.value;
+    const returnDate = returnValue ? new Date(returnValue) : null;
+    if (returnDate && returnDate < departure) {
+      return;
+    }
+
+    trip.destination = destination;
+    trip.departure = departure.toISOString();
+    trip.returnDate = returnDate ? returnDate.toISOString() : null;
+    if (state.editBackground) {
+      trip.background = state.editBackground;
+      trip.tint = null;
+    }
+    if (!trip.background) {
+      trip.tint = generateGradient(trip.destination);
+    }
+
+    saveTrips();
+    closeEditModal();
+    renderTrips();
+  }
+
+  function handleEditBackgroundChange(event) {
+    const file = event.target.files?.[0];
+    if (!file) {
+      state.editBackground = null;
+      updatePreview(elements.editPreview, null);
+      return;
+    }
+
+    readFile(file, (dataUrl) => {
+      state.editBackground = dataUrl;
+      updatePreview(elements.editPreview, dataUrl);
+    });
+  }
+
+  function readFile(file, callback) {
+    const reader = new FileReader();
+    reader.onload = () => callback(reader.result);
+    reader.readAsDataURL(file);
+  }
+
+  function updatePreview(element, image) {
+    if (!element) return;
+    if (!image) {
+      element.style.backgroundImage = '';
+      element.classList.remove('has-image');
+      return;
+    }
+    if (image.startsWith('linear-gradient')) {
+      element.style.backgroundImage = image;
+    } else {
+      element.style.backgroundImage = `url(${image})`;
+    }
+    element.classList.add('has-image');
+  }
+
+  function toLocalInputValue(value) {
+    if (!value) return '';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return '';
+    const tzOffset = date.getTimezoneOffset();
+    const localISO = new Date(date.getTime() - tzOffset * 60000).toISOString();
+    return localISO.slice(0, 16);
+  }
+
+  function createId() {
+    if (window.crypto?.randomUUID) {
+      return window.crypto.randomUUID();
+    }
+    return `trip-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+  }
+
+  function generateGradient(seed) {
+    let hash = 0;
+    for (let i = 0; i < seed.length; i += 1) {
+      hash = seed.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const hue1 = Math.abs(hash) % 360;
+    const hue2 = (hue1 + 60) % 360;
+    return `linear-gradient(135deg, hsl(${hue1} 70% 45%), hsl(${hue2} 70% 55%))`;
+  }
+
+  function startTicker() {
+    function tick() {
+      updateCountdowns();
+      window.requestAnimationFrame(tick);
+    }
+    window.requestAnimationFrame(tick);
+  }
+
+  function scrollToNextTrip() {
+    if (!state.nextTripId) return;
+    const card = document.getElementById(`trip-card-${state.nextTripId}`);
+    if (card) {
+      card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      card.classList.add('highlight');
+      setTimeout(() => card.classList.remove('highlight'), 1200);
+    }
+  }
+
+  function initParallax() {
+    const orbs = elements.parallax?.querySelectorAll('.orb');
+    if (!elements.parallax || !orbs?.length) return;
+
+    document.addEventListener('pointermove', (event) => {
+      const x = event.clientX / window.innerWidth - 0.5;
+      const y = event.clientY / window.innerHeight - 0.5;
+      orbs.forEach((orb, index) => {
+        const intensity = (index + 1) * 16;
+        orb.style.transform = `translate3d(${x * intensity}px, ${y * intensity}px, 0)`;
+      });
+    });
+
+    window.addEventListener('scroll', () => {
+      const offset = window.scrollY;
+      elements.parallax.style.transform = `translateY(${offset * -0.05}px)`;
+    });
+  }
+
+  init();
+})();
