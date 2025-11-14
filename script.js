@@ -1,5 +1,6 @@
 (() => {
   const storageKey = 'travelCountdown.trips.v2';
+  const legacyStorageKey = 'travel-countdowns/v1';
   const themeKey = 'travelCountdown.theme';
   const modeKey = 'travelCountdown.mode';
 
@@ -130,18 +131,165 @@
   }
 
   function loadTrips() {
+    state.trips = [];
     try {
       const stored = JSON.parse(localStorage.getItem(storageKey) || '[]');
-      if (Array.isArray(stored)) {
-        state.trips = stored.map((trip) => ({
-          ...trip,
-          tint: trip.tint || generateGradient(trip.destination)
-        }));
+      if (Array.isArray(stored) && stored.length) {
+        const normalized = stored.map((trip, index) => normalizeTrip(trip, index)).filter(Boolean);
+        if (normalized.length) {
+          state.trips = normalized;
+          return;
+        }
       }
     } catch (error) {
       console.error('Failed to parse saved trips', error);
       state.trips = [];
     }
+
+    const migrated = migrateLegacyTrips();
+    if (migrated.length) {
+      state.trips = migrated;
+      saveTrips();
+      localStorage.removeItem(legacyStorageKey);
+    }
+  }
+
+  function normalizeTrip(trip, index = 0) {
+    const destination =
+      (typeof trip.destination === 'string' && trip.destination.trim())
+        ? trip.destination.trim()
+        : extractDestination(trip, index);
+
+    const departure =
+      parseDateValue(trip.departure) ||
+      parseDateValue(trip.departureDate) ||
+      parseDateValue(trip.date) ||
+      parseDateValue(trip.startDate) ||
+      parseDateValue(trip.when);
+
+    if (!departure) {
+      return null;
+    }
+
+    const returnDate =
+      parseDateValue(trip.returnDate) ||
+      parseDateValue(trip.returnDateValue) ||
+      parseDateValue(trip.endDate) ||
+      parseDateValue(trip.arrival);
+
+    const background = trip.background || trip.backgroundImage || trip.image || null;
+
+    const createdAt = parseDateValue(trip.createdAt) || new Date().toISOString();
+
+    return {
+      ...trip,
+      id: trip.id || createId(),
+      destination,
+      departure,
+      returnDate,
+      background,
+      tint: background ? null : trip.tint || generateGradient(destination),
+      createdAt
+    };
+  }
+
+  function migrateLegacyTrips() {
+    try {
+      const raw = localStorage.getItem(legacyStorageKey);
+      if (!raw) return [];
+
+      const parsed = JSON.parse(raw);
+      const legacyTrips = Array.isArray(parsed)
+        ? parsed
+        : Array.isArray(parsed?.trips)
+        ? parsed.trips
+        : [];
+
+      const migrated = legacyTrips
+        .map((trip, index) => {
+          const destination = extractDestination(trip, index);
+          const departure =
+            parseDateValue(trip.departure) ||
+            parseDateValue(trip.departureDate) ||
+            parseDateValue(trip.date) ||
+            parseDateValue(trip.startDate) ||
+            parseDateValue(trip.when);
+
+          if (!departure) {
+            return null;
+          }
+
+          const returnDate =
+            parseDateValue(trip.returnDate) ||
+            parseDateValue(trip.endDate) ||
+            parseDateValue(trip.arrival);
+
+          const background =
+            trip.background || trip.backgroundImage || trip.image || trip.photo || null;
+
+          const seeded = {
+            ...trip,
+            id: trip.id,
+            destination,
+            departure,
+            returnDate,
+            background,
+            tint: background ? null : trip.tint,
+            createdAt: parseDateValue(trip.createdAt) || new Date().toISOString()
+          };
+
+          return normalizeTrip(seeded, index);
+        })
+        .filter(Boolean);
+
+      return migrated;
+    } catch (error) {
+      console.error('Failed to migrate legacy trips', error);
+      return [];
+    }
+  }
+
+  function extractDestination(trip, index) {
+    const fallback = `Trip ${index + 1}`;
+    if (typeof trip?.destination === 'string' && trip.destination.trim()) {
+      return trip.destination.trim();
+    }
+    if (typeof trip?.title === 'string' && trip.title.trim()) {
+      return trip.title.trim();
+    }
+    if (typeof trip?.name === 'string' && trip.name.trim()) {
+      return trip.name.trim();
+    }
+    return fallback;
+  }
+
+  function parseDateValue(value) {
+    if (!value) return null;
+
+    if (typeof value === 'number') {
+      const date = new Date(value);
+      return Number.isNaN(date.getTime()) ? null : date.toISOString();
+    }
+
+    if (typeof value === 'string') {
+      const trimmed = value.trim();
+      if (!trimmed) return null;
+
+      const numeric = Number(trimmed);
+      if (!Number.isNaN(numeric) && /^\d+$/.test(trimmed) && trimmed.length >= 8) {
+        const date = new Date(numeric);
+        if (!Number.isNaN(date.getTime())) {
+          return date.toISOString();
+        }
+      }
+
+      const parsed = new Date(trimmed);
+      if (!Number.isNaN(parsed.getTime())) {
+        return parsed.toISOString();
+      }
+    }
+
+    return null;
   }
 
   function saveTrips() {
