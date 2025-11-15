@@ -43,38 +43,38 @@
       <section class="panel controls-panel" id="controlsPanel">
         <form id="tripForm" class="control-form" autocomplete="off">
           <div class="field-group">
-            <label for="destinationInput">Destination</label>
-            <div class="input-shell icon-left">
+            <div class="input-shell floating-field icon-left">
               <svg class="input-icon" viewBox="0 0 24 24" aria-hidden="true">
                 <path
                   d="M12 2a7 7 0 0 0-7 7c0 4.5 6.2 12.5 6.5 12.9a.6.6 0 0 0 1 0C12.8 21 19 13.5 19 9a7 7 0 0 0-7-7Zm0 9.5A2.5 2.5 0 1 1 14.5 9 2.5 2.5 0 0 1 12 11.5Z"
                 ></path>
               </svg>
-              <input type="text" id="destinationInput" placeholder="Where to next?" required maxlength="80" />
+              <input type="text" id="destinationInput" placeholder=" " required maxlength="80" />
+              <label for="destinationInput" class="floating-label">Destination</label>
             </div>
           </div>
 
           <div class="field-row">
             <div class="field-group">
-              <label for="departureInput">Departure</label>
-              <div class="input-shell icon-left">
+              <div class="input-shell floating-field icon-left">
                 <svg class="input-icon" viewBox="0 0 24 24" aria-hidden="true">
                   <path
                     d="M7 3a2 2 0 0 0-2 2v1H4a1 1 0 0 0-1 1v12a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V7a1 1 0 0 0-1-1h-1V5a2 2 0 0 0-2-2h-1v2h-2V3h-4v2H9V3Zm12 8H5v8a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1Z"
                   ></path>
                 </svg>
-                <input type="datetime-local" id="departureInput" required />
+                <input type="datetime-local" id="departureInput" placeholder=" " required />
+                <label for="departureInput" class="floating-label">Departure</label>
               </div>
             </div>
             <div class="field-group">
-              <label for="returnInput">Return (optional)</label>
-              <div class="input-shell icon-left">
+              <div class="input-shell floating-field icon-left">
                 <svg class="input-icon" viewBox="0 0 24 24" aria-hidden="true">
                   <path
                     d="M7 3a2 2 0 0 0-2 2v1H4a1 1 0 0 0-1 1v12a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V7a1 1 0 0 0-1-1h-1V5a2 2 0 0 0-2-2h-1v2h-2V3h-4v2H9V3Zm12 8H5v8a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1Z"
                   ></path>
                 </svg>
-                <input type="datetime-local" id="returnInput" />
+                <input type="datetime-local" id="returnInput" placeholder=" " />
+                <label for="returnInput" class="floating-label">Return (optional)</label>
               </div>
             </div>
           </div>
@@ -96,6 +96,10 @@
               <label class="segment">
                 <input type="radio" name="displayMode" value="full" checked />
                 <span>Full</span>
+              </label>
+              <label class="segment">
+                <input type="radio" name="displayMode" value="months" />
+                <span>Months only</span>
               </label>
               <label class="segment">
                 <input type="radio" name="displayMode" value="days" />
@@ -162,32 +166,7 @@
             </button>
           </div>
         </div>
-        <div class="countdown-grid" data-mode="full">
-          <div class="time-block" data-unit="months">
-            <span class="time-value">00</span>
-            <span class="time-label">Months</span>
-          </div>
-          <div class="time-block" data-unit="weeks">
-            <span class="time-value">00</span>
-            <span class="time-label">Weeks</span>
-          </div>
-          <div class="time-block" data-unit="days">
-            <span class="time-value">00</span>
-            <span class="time-label">Days</span>
-          </div>
-          <div class="time-block" data-unit="hours">
-            <span class="time-value">00</span>
-            <span class="time-label">Hours</span>
-          </div>
-          <div class="time-block" data-unit="minutes">
-            <span class="time-value">00</span>
-            <span class="time-label">Minutes</span>
-          </div>
-          <div class="time-block" data-unit="seconds">
-            <span class="time-value">00</span>
-            <span class="time-label">Seconds</span>
-          </div>
-        </div>
+        <div class="countdown-grid" data-mode="full"></div>
         <div class="card-dates">
           <div class="date-line">
             <span class="date-label">Departing</span>
@@ -208,37 +187,37 @@
       <h2 id="editModalTitle">Edit trip</h2>
       <form id="editForm" class="modal-form">
         <div class="field-group">
-          <label for="editDestination">Destination</label>
-          <div class="input-shell icon-left">
+          <div class="input-shell floating-field icon-left">
             <svg class="input-icon" viewBox="0 0 24 24" aria-hidden="true">
               <path
                 d="M12 2a7 7 0 0 0-7 7c0 4.5 6.2 12.5 6.5 12.9a.6.6 0 0 0 1 0C12.8 21 19 13.5 19 9a7 7 0 0 0-7-7Zm0 9.5A2.5 2.5 0 1 1 14.5 9 2.5 2.5 0 0 1 12 11.5Z"
               ></path>
             </svg>
-            <input type="text" id="editDestination" required maxlength="80" />
+            <input type="text" id="editDestination" placeholder=" " required maxlength="80" />
+            <label for="editDestination" class="floating-label">Destination</label>
           </div>
         </div>
         <div class="field-row">
           <div class="field-group">
-            <label for="editDeparture">Departure</label>
-            <div class="input-shell icon-left">
+            <div class="input-shell floating-field icon-left">
               <svg class="input-icon" viewBox="0 0 24 24" aria-hidden="true">
                 <path
                   d="M7 3a2 2 0 0 0-2 2v1H4a1 1 0 0 0-1 1v12a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V7a1 1 0 0 0-1-1h-1V5a2 2 0 0 0-2-2h-1v2h-2V3h-4v2H9V3Zm12 8H5v8a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1Z"
                 ></path>
               </svg>
-              <input type="datetime-local" id="editDeparture" required />
+              <input type="datetime-local" id="editDeparture" placeholder=" " required />
+              <label for="editDeparture" class="floating-label">Departure</label>
             </div>
           </div>
           <div class="field-group">
-            <label for="editReturn">Return (optional)</label>
-            <div class="input-shell icon-left">
+            <div class="input-shell floating-field icon-left">
               <svg class="input-icon" viewBox="0 0 24 24" aria-hidden="true">
                 <path
                   d="M7 3a2 2 0 0 0-2 2v1H4a1 1 0 0 0-1 1v12a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V7a1 1 0 0 0-1-1h-1V5a2 2 0 0 0-2-2h-1v2h-2V3h-4v2H9V3Zm12 8H5v8a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1Z"
                 ></path>
               </svg>
-              <input type="datetime-local" id="editReturn" />
+              <input type="datetime-local" id="editReturn" placeholder=" " />
+              <label for="editReturn" class="floating-label">Return (optional)</label>
             </div>
           </div>
         </div>

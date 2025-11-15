@@ -37,6 +37,7 @@
 
   const rtf = new Intl.RelativeTimeFormat(undefined, { numeric: 'auto' });
   const dateFormatter = new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' });
+  const averageMonthMs = 1000 * 60 * 60 * 24 * 30.4375;
 
   const state = {
     trips: [],
@@ -55,6 +56,8 @@
     loadDisplayMode();
     loadTrips();
     bindEvents();
+    setupFloatingLabels();
+    refreshFloatingLabels();
     renderTrips();
     startTicker();
     initParallax();
@@ -71,6 +74,7 @@
           localStorage.setItem(modeKey, state.displayMode);
           applyDisplayMode();
           refreshBannerCountdown();
+          updateCountdowns(true);
         }
       });
     });
@@ -122,7 +126,7 @@
 
   function loadDisplayMode() {
     const saved = localStorage.getItem(modeKey);
-    if (saved && ['full', 'days', 'hm'].includes(saved)) {
+    if (saved && ['full', 'months', 'days', 'hm'].includes(saved)) {
       state.displayMode = saved;
       elements.displayModeRadios.forEach((radio) => {
         radio.checked = radio.value === saved;
@@ -346,6 +350,7 @@
     elements.form.reset();
     state.addBackground = null;
     updatePreview(elements.backgroundPreview, null);
+    refreshFloatingLabels(elements.form);
   }
 
   function renderTrips() {
@@ -371,7 +376,8 @@
         trip,
         card: card.cardElement,
         countdown: card.countdown,
-        blocks: card.blocks,
+        blocks: {},
+        mode: null,
         departureTs: new Date(trip.departure).getTime()
       });
     });
@@ -411,26 +417,19 @@
     }
 
     const countdown = card.querySelector('.countdown-grid');
-    const blocks = {
-      months: countdown.querySelector('[data-unit="months"] .time-value'),
-      weeks: countdown.querySelector('[data-unit="weeks"] .time-value'),
-      days: countdown.querySelector('[data-unit="days"] .time-value'),
-      hours: countdown.querySelector('[data-unit="hours"] .time-value'),
-      minutes: countdown.querySelector('[data-unit="minutes"] .time-value'),
-      seconds: countdown.querySelector('[data-unit="seconds"] .time-value')
-    };
 
     const editBtn = card.querySelector('.icon-btn.edit');
     const deleteBtn = card.querySelector('.icon-btn.delete');
     editBtn.addEventListener('click', () => openEditModal(trip.id));
     deleteBtn.addEventListener('click', () => deleteTrip(trip.id));
 
-    return { cardElement: card, countdown, blocks };
+    return { cardElement: card, countdown };
   }
 
   function applyDisplayMode() {
     state.countdownRefs.forEach((ref) => {
       ref.countdown.dataset.mode = state.displayMode;
+      ref.mode = null;
     });
   }
 
@@ -461,7 +460,7 @@
       return;
     }
     const parts = calculateParts(diff);
-    elements.bannerCountdown.textContent = formatBanner(parts);
+    elements.bannerCountdown.textContent = formatBanner(parts, state.displayMode);
   }
 
   function updateCountdowns(force = false) {
@@ -475,6 +474,9 @@
     state.countdownRefs.forEach((ref) => {
       const diff = ref.departureTs - now;
       const parts = calculateParts(diff);
+      ensureCountdownStructure(ref);
+      renderCountdown(ref, parts);
+
       const proximity = getProximity(diff);
       const status = diff <= 0 ? 'past' : 'upcoming';
 
@@ -482,13 +484,6 @@
       ref.card.dataset.status = status;
       const subtitle = ref.card.querySelector('.card-subtitle');
       subtitle.textContent = formatDepartureSubtitle(diff);
-
-      setTimeValue(ref.blocks.months, parts.months);
-      setTimeValue(ref.blocks.weeks, parts.weeks);
-      setTimeValue(ref.blocks.days, parts.days);
-      setTimeValue(ref.blocks.hours, parts.hours);
-      setTimeValue(ref.blocks.minutes, parts.minutes);
-      setTimeValue(ref.blocks.seconds, parts.seconds);
 
       if (ref.card.dataset.tripId === state.nextTripId && diff > 0) {
         ref.card.setAttribute('data-badge', 'next');
@@ -510,32 +505,124 @@
     refreshBannerCountdown();
   }
 
-  function setTimeValue(element, value) {
+  function updateNumericValue(element, value, { pad = false } = {}) {
     if (!element) return;
-    const formatted = String(Math.max(0, value)).padStart(2, '0');
-    if (element.dataset.value === formatted) return;
-    element.dataset.value = formatted;
-    element.textContent = formatted;
+    const normalized = Math.max(0, value);
+    const text = pad ? String(normalized).padStart(2, '0') : String(normalized);
+    if (element.dataset.value === text) return;
+    element.dataset.value = text;
+    element.textContent = text;
     element.classList.add('animate');
     setTimeout(() => element.classList.remove('animate'), 250);
   }
 
+  function ensureCountdownStructure(ref) {
+    if (!ref) return;
+    const mode = state.displayMode;
+    if (ref.mode === mode) return;
+
+    ref.mode = mode;
+    ref.blocks = {};
+    const countdown = ref.countdown;
+    countdown.dataset.mode = mode;
+    countdown.innerHTML = '';
+
+    if (mode === 'full') {
+      const units = [
+        ['months', 'Months'],
+        ['weeks', 'Weeks'],
+        ['days', 'Days'],
+        ['hours', 'Hours'],
+        ['minutes', 'Minutes'],
+        ['seconds', 'Seconds']
+      ];
+      units.forEach(([unit, label]) => {
+        const block = createCountdownBlock(unit, label);
+        countdown.appendChild(block.element);
+        ref.blocks[unit] = block.value;
+      });
+    } else if (mode === 'months') {
+      const block = createCountdownBlock('months-total', 'Months');
+      countdown.appendChild(block.element);
+      ref.blocks.monthsOnly = block.value;
+    } else if (mode === 'days') {
+      const block = createCountdownBlock('days-total', 'Days');
+      countdown.appendChild(block.element);
+      ref.blocks.daysOnly = block.value;
+    } else if (mode === 'hm') {
+      const hoursBlock = createCountdownBlock('hours-total', 'Hours');
+      const minutesBlock = createCountdownBlock('minutes-remaining', 'Minutes');
+      countdown.append(hoursBlock.element, minutesBlock.element);
+      ref.blocks.hours = hoursBlock.value;
+      ref.blocks.minutes = minutesBlock.value;
+    }
+  }
+
+  function createCountdownBlock(unit, label) {
+    const block = document.createElement('div');
+    block.className = 'time-block';
+    block.dataset.unit = unit;
+    const value = document.createElement('span');
+    value.className = 'time-value';
+    value.textContent = '00';
+    const labelEl = document.createElement('span');
+    labelEl.className = 'time-label';
+    labelEl.textContent = label;
+    block.append(value, labelEl);
+    return { element: block, value };
+  }
+
+  function renderCountdown(ref, parts) {
+    const mode = state.displayMode;
+    if (mode === 'full') {
+      updateNumericValue(ref.blocks.months, parts.months, { pad: true });
+      updateNumericValue(ref.blocks.weeks, parts.weeks, { pad: true });
+      updateNumericValue(ref.blocks.days, parts.days, { pad: true });
+      updateNumericValue(ref.blocks.hours, parts.hours, { pad: true });
+      updateNumericValue(ref.blocks.minutes, parts.minutes, { pad: true });
+      updateNumericValue(ref.blocks.seconds, parts.seconds, { pad: true });
+    } else if (mode === 'months') {
+      updateNumericValue(ref.blocks.monthsOnly, parts.totalMonths);
+    } else if (mode === 'days') {
+      updateNumericValue(ref.blocks.daysOnly, parts.totalDays);
+    } else if (mode === 'hm') {
+      updateNumericValue(ref.blocks.hours, parts.totalHours);
+      updateNumericValue(ref.blocks.minutes, parts.remainingMinutes, { pad: true });
+    }
+  }
+
   function calculateParts(diffMs) {
     const clamped = Math.max(0, diffMs);
-    const totalSeconds = Math.floor(clamped / 1000);
-    let remainder = totalSeconds;
+    const dayMs = 1000 * 60 * 60 * 24;
+    const hourMs = 1000 * 60 * 60;
+    const minuteMs = 1000 * 60;
+    const secondMs = 1000;
+    const weekMs = dayMs * 7;
+    const monthMs = averageMonthMs;
 
-    const months = Math.floor(remainder / (30 * 24 * 3600));
-    remainder -= months * 30 * 24 * 3600;
-    const weeks = Math.floor(remainder / (7 * 24 * 3600));
-    remainder -= weeks * 7 * 24 * 3600;
-    const days = Math.floor(remainder / (24 * 3600));
-    remainder -= days * 24 * 3600;
-    const hours = Math.floor(remainder / 3600);
-    remainder -= hours * 3600;
-    const minutes = Math.floor(remainder / 60);
-    remainder -= minutes * 60;
-    const seconds = remainder;
+    let remainderMs = clamped;
+
+    const months = Math.floor(remainderMs / monthMs);
+    remainderMs -= months * monthMs;
+
+    const weeks = Math.floor(remainderMs / weekMs);
+    remainderMs -= weeks * weekMs;
+
+    const days = Math.floor(remainderMs / dayMs);
+    remainderMs -= days * dayMs;
+
+    const hours = Math.floor(remainderMs / hourMs);
+    remainderMs -= hours * hourMs;
+
+    const minutes = Math.floor(remainderMs / minuteMs);
+    remainderMs -= minutes * minuteMs;
+
+    const seconds = Math.floor(remainderMs / secondMs);
+
+    const totalMonths = Math.floor(clamped / monthMs);
+    const totalDays = Math.floor(clamped / dayMs);
+    const totalHours = Math.floor(clamped / hourMs);
+    const remainingMinutes = Math.floor((clamped % hourMs) / minuteMs);
 
     return {
       months,
@@ -544,24 +631,43 @@
       hours,
       minutes,
       seconds,
-      totalDays: Math.floor(totalSeconds / (24 * 3600))
+      totalMonths,
+      totalDays,
+      totalHours,
+      remainingMinutes
     };
   }
 
-  function formatBanner(parts) {
-    if (parts.months) {
-      return `${parts.months} mo · ${parts.weeks} wk`;
+  function formatBanner(parts, mode) {
+    switch (mode) {
+      case 'months': {
+        const value = parts.totalMonths;
+        return value === 1 ? '1 month remaining' : `${value} months remaining`;
+      }
+      case 'days': {
+        const value = parts.totalDays;
+        return value === 1 ? '1 day remaining' : `${value} days remaining`;
+      }
+      case 'hm': {
+        const minutes = String(parts.remainingMinutes).padStart(2, '0');
+        return `${parts.totalHours} h · ${minutes} m`;
+      }
+      default: {
+        if (parts.months) {
+          return `${parts.months} mo · ${parts.weeks} wk`;
+        }
+        if (parts.weeks) {
+          return `${parts.weeks} wk · ${parts.days} d`;
+        }
+        if (parts.days) {
+          return `${parts.days} d · ${parts.hours} h`;
+        }
+        if (parts.hours) {
+          return `${parts.hours} h · ${parts.minutes} m`;
+        }
+        return `${Math.max(parts.minutes, 0)} m · ${parts.seconds} s`;
+      }
     }
-    if (parts.weeks) {
-      return `${parts.weeks} wk · ${parts.days} d`;
-    }
-    if (parts.days) {
-      return `${parts.days} d · ${parts.hours} h`;
-    }
-    if (parts.hours) {
-      return `${parts.hours} h · ${parts.minutes} m`;
-    }
-    return `${Math.max(parts.minutes, 0)} m · ${parts.seconds} s`;
   }
 
   function formatDepartureSubtitle(diff) {
@@ -626,6 +732,7 @@
     elements.editReturn.value = toLocalInputValue(trip.returnDate);
     state.editBackground = null;
     updatePreview(elements.editPreview, trip.background || trip.tint);
+    refreshFloatingLabels(elements.modal);
     elements.modal.classList.remove('hidden');
   }
 
@@ -635,6 +742,7 @@
     updatePreview(elements.editPreview, null);
     state.editBackground = null;
     activeEditId = null;
+    refreshFloatingLabels(elements.modal);
   }
 
   function handleEditSubmit(event) {
@@ -730,6 +838,32 @@
     const hue1 = Math.abs(hash) % 360;
     const hue2 = (hue1 + 60) % 360;
     return `linear-gradient(135deg, hsl(${hue1} 70% 45%), hsl(${hue2} 70% 55%))`;
+  }
+
+  function setupFloatingLabels() {
+    document.querySelectorAll('.floating-field input').forEach((input) => {
+      if (input.dataset.floatingBound) return;
+      const update = () => {
+        const shell = input.closest('.floating-field');
+        if (shell) {
+          shell.classList.toggle('has-value', Boolean(input.value));
+        }
+      };
+      input.addEventListener('input', update);
+      input.addEventListener('change', update);
+      input.dataset.floatingBound = 'true';
+      update();
+    });
+  }
+
+  function refreshFloatingLabels(root = document) {
+    const scope = root && typeof root.querySelectorAll === 'function' ? root : document;
+    scope.querySelectorAll('.floating-field input').forEach((input) => {
+      const shell = input.closest('.floating-field');
+      if (shell) {
+        shell.classList.toggle('has-value', Boolean(input.value));
+      }
+    });
   }
 
   function startTicker() {

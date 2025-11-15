@@ -248,7 +248,12 @@ body.theme-light .toggle-icon.sun {
   gap: var(--space-xs);
 }
 
-.field-group label,
+.field-group > label {
+  font-weight: 600;
+  color: var(--text-secondary);
+  letter-spacing: 0.01em;
+}
+
 .segmented-control legend {
   font-weight: 600;
   color: var(--text-secondary);
@@ -301,6 +306,48 @@ body.theme-light .toggle-icon.sun {
   position: absolute;
   left: var(--space-md);
   pointer-events: none;
+}
+
+.floating-field {
+  padding-top: calc(var(--space-sm) + 0.4rem);
+}
+
+.floating-field input {
+  padding-top: calc(var(--space-md) + 0.4rem);
+  padding-bottom: var(--space-sm);
+}
+
+.floating-field input::placeholder {
+  color: transparent;
+}
+
+.floating-label {
+  position: absolute;
+  top: 50%;
+  left: var(--space-md);
+  transform: translateY(-50%);
+  font-weight: 600;
+  color: var(--text-secondary);
+  letter-spacing: 0.01em;
+  pointer-events: none;
+  transition: transform var(--transition), top var(--transition), font-size var(--transition), color var(--transition);
+}
+
+.floating-field.icon-left .floating-label {
+  left: calc(var(--space-md) + 1.7rem);
+}
+
+.floating-field:focus-within .floating-label {
+  color: var(--accent-strong);
+}
+
+.floating-field.has-value .floating-label,
+.floating-field input:focus + .floating-label,
+.floating-field input:not(:placeholder-shown) + .floating-label {
+  top: var(--space-xs);
+  transform: none;
+  font-size: 0.75rem;
+  letter-spacing: 0.12em;
 }
 
 .file-shell {
@@ -382,7 +429,7 @@ body.theme-light .toggle-icon.sun {
   border-radius: 999px;
   color: var(--text-secondary);
   transition: color var(--transition);
-  min-width: 7.5rem;
+  min-width: 6.75rem;
 }
 
 .segment input:checked + span {
@@ -680,6 +727,39 @@ body.theme-light .toggle-icon.sun {
   text-transform: uppercase;
   letter-spacing: 0.1em;
   opacity: 0.8;
+}
+
+.countdown-grid[data-mode="months"],
+.countdown-grid[data-mode="days"] {
+  grid-template-columns: minmax(220px, 1fr);
+  justify-items: center;
+  justify-content: center;
+  align-content: center;
+}
+
+.countdown-grid[data-mode="months"] .time-block,
+.countdown-grid[data-mode="days"] .time-block {
+  padding: var(--space-xl) var(--space-lg);
+  text-align: center;
+  width: min(100%, 320px);
+}
+
+.countdown-grid[data-mode="months"] .time-value,
+.countdown-grid[data-mode="days"] .time-value {
+  font-size: 3rem;
+}
+
+.countdown-grid[data-mode="hm"] {
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  justify-content: center;
+}
+
+.countdown-grid[data-mode="hm"] .time-block {
+  padding: var(--space-lg) var(--space-md);
+}
+
+.countdown-grid[data-mode="hm"] .time-value {
+  font-size: 2.6rem;
 }
 
 .card-dates {
