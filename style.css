@@ -299,18 +299,24 @@ body.theme-light .toggle-icon.sun {
   box-shadow: 0 0 0 3px var(--accent-soft);
 }
 
-.input-icon {
-  width: 1.1rem;
-  height: 1.1rem;
-  fill: var(--text-secondary);
-}
-
-.input-shell.icon-left .input-icon {
+.input-shell .input-icon {
   position: absolute;
   left: 0.75rem;
   top: 50%;
   transform: translateY(-50%);
+  width: 1rem;
+  height: 1rem;
+  opacity: 0.8;
   pointer-events: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.input-shell .input-icon svg {
+  width: 100%;
+  height: 100%;
+  fill: var(--text-secondary);
 }
 
 .floating-field {
@@ -322,7 +328,7 @@ body.theme-light .toggle-icon.sun {
 .floating-field .input-control {
   padding-top: calc(var(--space-md) + 0.4rem);
   padding-bottom: var(--space-sm);
-  padding-left: 2.5rem;
+  padding-left: 2.25rem;
 }
 
 .floating-field input::placeholder {
@@ -332,7 +338,7 @@ body.theme-light .toggle-icon.sun {
 .floating-label {
   position: absolute;
   top: 50%;
-  left: 2.5rem;
+  left: 2.25rem;
   transform: translateY(-50%);
   font-weight: 600;
   color: var(--text-secondary);
@@ -348,11 +354,11 @@ body.theme-light .toggle-icon.sun {
 .floating-field.has-value .floating-label,
 .floating-field input:focus + .floating-label,
 .floating-field input:not(:placeholder-shown) + .floating-label {
-  top: -6px;
+  top: -0.55rem;
   transform: none;
   font-size: 0.65rem;
   letter-spacing: 0.12em;
-  left: 2.5rem;
+  left: 2.25rem;
   opacity: 0.9;
 }
 

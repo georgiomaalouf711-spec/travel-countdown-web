@@ -44,11 +44,13 @@
         <form id="tripForm" class="control-form" autocomplete="off">
           <div class="field-group">
             <div class="input-shell floating-field icon-left">
-              <svg class="input-icon" viewBox="0 0 24 24" aria-hidden="true">
-                <path
-                  d="M12 2a7 7 0 0 0-7 7c0 4.5 6.2 12.5 6.5 12.9a.6.6 0 0 0 1 0C12.8 21 19 13.5 19 9a7 7 0 0 0-7-7Zm0 9.5A2.5 2.5 0 1 1 14.5 9 2.5 2.5 0 0 1 12 11.5Z"
-                ></path>
-              </svg>
+              <span class="input-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24">
+                  <path
+                    d="M12 2a7 7 0 0 0-7 7c0 4.5 6.2 12.5 6.5 12.9a.6.6 0 0 0 1 0C12.8 21 19 13.5 19 9a7 7 0 0 0-7-7Zm0 9.5A2.5 2.5 0 1 1 14.5 9 2.5 2.5 0 0 1 12 11.5Z"
+                  ></path>
+                </svg>
+              </span>
               <input type="text" id="destinationInput" placeholder=" " required maxlength="80" />
               <label for="destinationInput" class="floating-label">Destination</label>
             </div>
@@ -57,22 +59,26 @@
           <div class="field-row">
             <div class="field-group">
               <div class="input-shell floating-field icon-left">
-                <svg class="input-icon" viewBox="0 0 24 24" aria-hidden="true">
-                  <path
-                    d="M7 3a2 2 0 0 0-2 2v1H4a1 1 0 0 0-1 1v12a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V7a1 1 0 0 0-1-1h-1V5a2 2 0 0 0-2-2h-1v2h-2V3h-4v2H9V3Zm12 8H5v8a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1Z"
-                  ></path>
-                </svg>
+                <span class="input-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24">
+                    <path
+                      d="M7 3a2 2 0 0 0-2 2v1H4a1 1 0 0 0-1 1v12a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V7a1 1 0 0 0-1-1h-1V5a2 2 0 0 0-2-2h-1v2h-2V3h-4v2H9V3Zm12 8H5v8a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1Z"
+                    ></path>
+                  </svg>
+                </span>
                 <input type="datetime-local" id="departureInput" placeholder=" " required />
                 <label for="departureInput" class="floating-label">Departure</label>
               </div>
             </div>
             <div class="field-group">
               <div class="input-shell floating-field icon-left">
-                <svg class="input-icon" viewBox="0 0 24 24" aria-hidden="true">
-                  <path
-                    d="M7 3a2 2 0 0 0-2 2v1H4a1 1 0 0 0-1 1v12a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V7a1 1 0 0 0-1-1h-1V5a2 2 0 0 0-2-2h-1v2h-2V3h-4v2H9V3Zm12 8H5v8a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1Z"
-                  ></path>
-                </svg>
+                <span class="input-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24">
+                    <path
+                      d="M7 3a2 2 0 0 0-2 2v1H4a1 1 0 0 0-1 1v12a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V7a1 1 0 0 0-1-1h-1V5a2 2 0 0 0-2-2h-1v2h-2V3h-4v2H9V3Zm12 8H5v8a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1Z"
+                    ></path>
+                  </svg>
+                </span>
                 <input type="datetime-local" id="returnInput" placeholder=" " />
                 <label for="returnInput" class="floating-label">Return (optional)</label>
               </div>
@@ -188,11 +194,13 @@
       <form id="editForm" class="modal-form">
         <div class="field-group">
           <div class="input-shell floating-field icon-left">
-            <svg class="input-icon" viewBox="0 0 24 24" aria-hidden="true">
-              <path
-                d="M12 2a7 7 0 0 0-7 7c0 4.5 6.2 12.5 6.5 12.9a.6.6 0 0 0 1 0C12.8 21 19 13.5 19 9a7 7 0 0 0-7-7Zm0 9.5A2.5 2.5 0 1 1 14.5 9 2.5 2.5 0 0 1 12 11.5Z"
-              ></path>
-            </svg>
+            <span class="input-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24">
+                <path
+                  d="M12 2a7 7 0 0 0-7 7c0 4.5 6.2 12.5 6.5 12.9a.6.6 0 0 0 1 0C12.8 21 19 13.5 19 9a7 7 0 0 0-7-7Zm0 9.5A2.5 2.5 0 1 1 14.5 9 2.5 2.5 0 0 1 12 11.5Z"
+                ></path>
+              </svg>
+            </span>
             <input type="text" id="editDestination" placeholder=" " required maxlength="80" />
             <label for="editDestination" class="floating-label">Destination</label>
           </div>
@@ -200,22 +208,26 @@
         <div class="field-row">
           <div class="field-group">
             <div class="input-shell floating-field icon-left">
-              <svg class="input-icon" viewBox="0 0 24 24" aria-hidden="true">
-                <path
-                  d="M7 3a2 2 0 0 0-2 2v1H4a1 1 0 0 0-1 1v12a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V7a1 1 0 0 0-1-1h-1V5a2 2 0 0 0-2-2h-1v2h-2V3h-4v2H9V3Zm12 8H5v8a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1Z"
-                ></path>
-              </svg>
+              <span class="input-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24">
+                  <path
+                    d="M7 3a2 2 0 0 0-2 2v1H4a1 1 0 0 0-1 1v12a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V7a1 1 0 0 0-1-1h-1V5a2 2 0 0 0-2-2h-1v2h-2V3h-4v2H9V3Zm12 8H5v8a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1Z"
+                  ></path>
+                </svg>
+              </span>
               <input type="datetime-local" id="editDeparture" placeholder=" " required />
               <label for="editDeparture" class="floating-label">Departure</label>
             </div>
           </div>
           <div class="field-group">
             <div class="input-shell floating-field icon-left">
-              <svg class="input-icon" viewBox="0 0 24 24" aria-hidden="true">
-                <path
-                  d="M7 3a2 2 0 0 0-2 2v1H4a1 1 0 0 0-1 1v12a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V7a1 1 0 0 0-1-1h-1V5a2 2 0 0 0-2-2h-1v2h-2V3h-4v2H9V3Zm12 8H5v8a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1Z"
-                ></path>
-              </svg>
+              <span class="input-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24">
+                  <path
+                    d="M7 3a2 2 0 0 0-2 2v1H4a1 1 0 0 0-1 1v12a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V7a1 1 0 0 0-1-1h-1V5a2 2 0 0 0-2-2h-1v2h-2V3h-4v2H9V3Zm12 8H5v8a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1Z"
+                  ></path>
+                </svg>
+              </span>
               <input type="datetime-local" id="editReturn" placeholder=" " />
               <label for="editReturn" class="floating-label">Return (optional)</label>
             </div>
