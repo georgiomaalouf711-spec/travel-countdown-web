@@ -272,7 +272,7 @@ body.theme-light .toggle-icon.sun {
 }
 
 .icon-left input {
-  padding-left: 2.75rem;
+  padding-left: 2.5rem;
 }
 
 .input-shell input[type="text"],
@@ -303,8 +303,13 @@ body.theme-light .toggle-icon.sun {
   width: 1.1rem;
   height: 1.1rem;
   fill: var(--text-secondary);
+}
+
+.input-shell.icon-left .input-icon {
   position: absolute;
-  left: var(--space-md);
+  left: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
   pointer-events: none;
 }
 
@@ -312,9 +317,12 @@ body.theme-light .toggle-icon.sun {
   padding-top: calc(var(--space-sm) + 0.4rem);
 }
 
-.floating-field input {
+.floating-field input,
+.floating-field textarea,
+.floating-field .input-control {
   padding-top: calc(var(--space-md) + 0.4rem);
   padding-bottom: var(--space-sm);
+  padding-left: 2.5rem;
 }
 
 .floating-field input::placeholder {
@@ -324,17 +332,13 @@ body.theme-light .toggle-icon.sun {
 .floating-label {
   position: absolute;
   top: 50%;
-  left: var(--space-md);
+  left: 2.5rem;
   transform: translateY(-50%);
   font-weight: 600;
   color: var(--text-secondary);
   letter-spacing: 0.01em;
   pointer-events: none;
-  transition: transform var(--transition), top var(--transition), font-size var(--transition), color var(--transition);
-}
-
-.floating-field.icon-left .floating-label {
-  left: calc(var(--space-md) + 1.7rem);
+  transition: transform var(--transition), top var(--transition), font-size var(--transition), color var(--transition), left var(--transition), opacity var(--transition);
 }
 
 .floating-field:focus-within .floating-label {
@@ -344,10 +348,12 @@ body.theme-light .toggle-icon.sun {
 .floating-field.has-value .floating-label,
 .floating-field input:focus + .floating-label,
 .floating-field input:not(:placeholder-shown) + .floating-label {
-  top: var(--space-xs);
+  top: -6px;
   transform: none;
-  font-size: 0.75rem;
+  font-size: 0.65rem;
   letter-spacing: 0.12em;
+  left: 2.5rem;
+  opacity: 0.9;
 }
 
 .file-shell {
