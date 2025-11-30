@@ -431,6 +431,7 @@
       ref.countdown.dataset.mode = state.displayMode;
       ref.mode = null;
     });
+    elements.banner.dataset.mode = state.displayMode;
   }
 
   function determineNextTrip() {
@@ -439,6 +440,8 @@
     if (!upcoming.length) {
       state.nextTripId = null;
       elements.banner.classList.add('hidden');
+      elements.bannerDestination.textContent = '';
+      elements.bannerCountdown.textContent = '';
       return;
     }
 
