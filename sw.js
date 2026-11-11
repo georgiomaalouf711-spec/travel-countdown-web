@@ -1,5 +1,5 @@
 // Network-first with offline fallback: updates arrive automatically, app still opens offline.
-const V = 'travel-countdown-v2';
+const V = 'travel-countdown-v3';
 const SHELL = ['./', 'index.html', 'style.css', 'script.js', 'manifest.webmanifest',
   'icons/icon-192.png', 'icons/icon-512.png', 'icons/apple-touch-icon.png'];
 self.addEventListener('install', e => e.waitUntil(

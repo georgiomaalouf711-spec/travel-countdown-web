@@ -2,6 +2,8 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-LMtb8RY01WnR//FpZYVfdBKaS/6JNOkrGVJldiOnozk='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://flagcdn.com https://upload.wikimedia.org; connect-src 'self' https://geocoding-api.open-meteo.com https://api.open-meteo.com https://archive-api.open-meteo.com https://open.er-api.com https://en.wikivoyage.org https://en.wikipedia.org https://upload.wikimedia.org; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'">
+<meta name="referrer" content="no-referrer">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Travel Countdown</title>
 <meta name="description" content="Countdowns to your next trips.">
@@ -43,7 +45,7 @@
   </section>
 </div>
 <button id="fab" class="fab" type="button" aria-label="Add trip" data-add>+</button>
-<div id="toast" class="toast" role="status"></div>
+<div id="toast" class="toast" role="status" popover="manual"></div>
 
 <dialog id="sheet" aria-labelledby="sheetTitle">
   <form id="form" autocomplete="off">
@@ -54,7 +56,10 @@
       <label>Departure<input id="dep" type="datetime-local" required></label>
       <label>Return <small>(optional)</small><input id="ret" type="datetime-local"></label>
     </div>
-    <label>Time zone <small>(optional — shows local time there)</small><input id="tz" type="text" list="tzs" placeholder="e.g. Asia/Beirut" autocapitalize="off" spellcheck="false"></label>
+    <div class="qk" id="qk"><span>Return after</span><button type="button" data-n="3">3 nights</button><button type="button" data-n="7">1 week</button><button type="button" data-n="14">2 weeks</button><button type="button" data-n="0">No return</button></div>
+    <p id="durHint" aria-live="polite"></p>
+    <label>Place for weather &amp; guide <small>(optional — defaults to the trip name)</small><input id="place" type="text" placeholder="e.g. Beirut" maxlength="80"></label>
+    <label>Time zone <small>(optional — leave empty to auto-detect)</small><input id="tz" type="text" list="tzs" placeholder="e.g. Asia/Beirut" autocapitalize="off" spellcheck="false"></label>
     <label>Background photo
       <span class="photo"><span id="prev" class="prev"></span><input id="photo" type="file" accept="image/*"></span>
     </label>
@@ -66,7 +71,7 @@
   </form>
 </dialog>
 <datalist id="tzs"></datalist>
-<canvas id="fx" class="fx" hidden aria-hidden="true"></canvas>
+<canvas id="fx" class="fx" popover="manual" aria-hidden="true"></canvas>
 
 <dialog id="detail" class="full" aria-labelledby="dTitle">
   <div class="dhero" id="dHero"><div class="veil"></div>
@@ -77,6 +82,8 @@
     </div>
   </div>
   <div class="facts" id="dFacts"></div>
+  <section class="panel" id="wxP" hidden><div class="ph"><h3>Weather there</h3><button class="link" id="wxRef" type="button">Refresh</button></div><div id="wxBody"></div></section>
+  <section class="panel" id="gdP" hidden><div class="ph"><h3>Travel guide</h3><button class="link" id="gdChange" type="button">Change</button></div><p class="gplace" id="gdPlace"></p><div id="gdBody"></div></section>
   <section class="panel" id="dClockP" hidden><h3>Local time there</h3><p id="dClock" class="clock"></p></section>
   <section class="panel">
     <div class="ph"><h3>Packing list</h3><span id="pCount"></span></div>
@@ -100,6 +107,10 @@
     <h3 class="grp">Dates &amp; time</h3>
     <div class="set"><span>Date format</span><div class="seg" data-k="datefmt"><button type="button" data-v="auto">Auto</button><button type="button" data-v="dmy">D/M/Y</button><button type="button" data-v="mdy">M/D/Y</button><button type="button" data-v="iso">ISO</button></div></div>
     <div class="set"><span>Clock</span><div class="seg" data-k="time"><button type="button" data-v="auto">Auto</button><button type="button" data-v="12">12h</button><button type="button" data-v="24">24h</button></div></div>
+    <h3 class="grp">Destination info</h3>
+    <label class="set"><span>Live weather &amp; travel guide<small>Loaded from free public services when you open a trip.</small></span><input class="tgl" type="checkbox" data-k="live"></label>
+    <div class="set"><span>Temperature</span><div class="seg" data-k="units"><button type="button" data-v="c">°C</button><button type="button" data-v="f">°F</button></div></div>
+    <label class="set"><span>Home currency</span><input class="txt" type="text" id="homeCur" data-k="home" maxlength="3" autocapitalize="characters" spellcheck="false"></label>
     <h3 class="grp">Alerts &amp; feel</h3>
     <label class="set"><span>Milestone alerts<small>100 days, 30, 7, tomorrow, departure. Delivered when the app is open or in the background.</small></span><input class="tgl" type="checkbox" data-k="notify"></label>
     <button class="btn ghost" id="nTest" type="button">Send a test alert</button>
