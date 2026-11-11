@@ -1,265 +1,115 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Travel Countdown</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link
-    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Roboto+Mono:wght@500&display=swap"
-    rel="stylesheet"
-  />
-  <link rel="stylesheet" href="style.css" />
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Travel Countdown</title>
+<meta name="description" content="Countdowns to your next trips.">
+<meta name="theme-color" content="#0b1226">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Countdown">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<script>try{var t=JSON.parse(localStorage.getItem('travelCountdown.settings')||'{}').theme||localStorage.getItem('travelCountdown.theme')||'auto';document.documentElement.dataset.theme=t==='auto'?(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'):t}catch(e){}</script>
+<link rel="stylesheet" href="style.css">
 </head>
-<body class="theme-light">
-  <div class="parallax-backdrop" id="parallaxBackdrop" aria-hidden="true">
-    <span class="orb orb-one"></span>
-    <span class="orb orb-two"></span>
-    <span class="orb orb-three"></span>
-  </div>
+<body>
+<div class="sky" aria-hidden="true">
+  <i class="sun"></i>
+  <svg class="route" viewBox="0 0 400 800" preserveAspectRatio="xMidYMid slice">
+    <path id="rp" class="trail" d="M-30 700C90 470 250 650 430 140"/>
+    <path class="jet" d="M9 0-7-5.5-3.5 0-7 5.5Z"><animateMotion dur="46s" repeatCount="indefinite" rotate="auto"><mpath href="#rp"/></animateMotion></path>
+  </svg>
+</div>
+<div class="app">
+  <header class="top">
+    <div><p class="eyebrow">✈ Departures</p><h1>Travel Countdown</h1></div>
+    <div class="tools">
+      <button id="modeBtn" class="chip" type="button" aria-label="Change display mode">Full</button>
+      <button id="shareBtn" class="icon" type="button" aria-label="Share trips">⇪</button>
+      <button id="setBtn" class="icon" type="button" aria-label="Settings">⚙</button>
+    </div>
+  </header>
+  <div id="hint" class="hint" hidden><span id="hintText"></span><button id="hintAct" type="button" hidden>Install</button><button id="hintX" type="button" aria-label="Dismiss">×</button></div>
+  <main id="list"></main>
+  <section id="empty" class="empty" hidden>
+    <div class="plane" aria-hidden="true">✈</div>
+    <h2>Where to next?</h2>
+    <p>Add a trip and watch the days tick down.</p>
+    <button class="btn" type="button" data-add>Add your first trip</button>
+  </section>
+</div>
+<button id="fab" class="fab" type="button" aria-label="Add trip" data-add>+</button>
+<div id="toast" class="toast" role="status"></div>
 
-  <div class="app-container">
-    <header class="app-header">
-      <div class="header-bar">
-        <div class="brand">
-          <span class="logo-mark" aria-hidden="true">✈️</span>
-          <div class="brand-copy">
-            <h1>Travel Countdown</h1>
-            <p class="subtitle">Plan your next adventure with a polished, animated countdown experience.</p>
-          </div>
-        </div>
-        <button class="theme-toggle" id="themeToggle" type="button" aria-label="Toggle theme">
-          <span class="toggle-track">
-            <span class="toggle-icon sun" aria-hidden="true">☀️</span>
-            <span class="toggle-icon moon" aria-hidden="true">🌙</span>
-            <span class="toggle-thumb"></span>
-          </span>
-        </button>
-      </div>
-    </header>
+<dialog id="sheet" aria-labelledby="sheetTitle">
+  <form id="form" autocomplete="off">
+    <div class="grab" aria-hidden="true"></div>
+    <h2 id="sheetTitle">New trip</h2>
+    <label>Destination<input id="dest" type="text" placeholder="Where to next?" required maxlength="80"></label>
+    <div class="two">
+      <label>Departure<input id="dep" type="datetime-local" required></label>
+      <label>Return <small>(optional)</small><input id="ret" type="datetime-local"></label>
+    </div>
+    <label>Time zone <small>(optional — shows local time there)</small><input id="tz" type="text" list="tzs" placeholder="e.g. Asia/Beirut" autocapitalize="off" spellcheck="false"></label>
+    <label>Background photo
+      <span class="photo"><span id="prev" class="prev"></span><input id="photo" type="file" accept="image/*"></span>
+    </label>
+    <div class="acts">
+      <button class="btn" type="submit">Save trip</button>
+      <button class="btn ghost" type="button" id="cancel" formnovalidate>Cancel</button>
+    </div>
+    <button class="danger" type="button" id="del" hidden>Delete this trip</button>
+  </form>
+</dialog>
+<datalist id="tzs"></datalist>
+<canvas id="fx" class="fx" hidden aria-hidden="true"></canvas>
 
-    <main class="main-content">
-      <section class="panel controls-panel" id="controlsPanel">
-        <form id="tripForm" class="control-form" autocomplete="off">
-          <div class="field-group">
-            <label for="destinationInput">Destination</label>
-            <div class="input-shell icon-left">
-              <svg class="input-icon" viewBox="0 0 24 24" aria-hidden="true">
-                <path
-                  d="M12 2a7 7 0 0 0-7 7c0 4.5 6.2 12.5 6.5 12.9a.6.6 0 0 0 1 0C12.8 21 19 13.5 19 9a7 7 0 0 0-7-7Zm0 9.5A2.5 2.5 0 1 1 14.5 9 2.5 2.5 0 0 1 12 11.5Z"
-                ></path>
-              </svg>
-              <input type="text" id="destinationInput" placeholder="Where to next?" required maxlength="80" />
-            </div>
-          </div>
-
-          <div class="field-row">
-            <div class="field-group">
-              <label for="departureInput">Departure</label>
-              <div class="input-shell icon-left">
-                <svg class="input-icon" viewBox="0 0 24 24" aria-hidden="true">
-                  <path
-                    d="M7 3a2 2 0 0 0-2 2v1H4a1 1 0 0 0-1 1v12a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V7a1 1 0 0 0-1-1h-1V5a2 2 0 0 0-2-2h-1v2h-2V3h-4v2H9V3Zm12 8H5v8a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1Z"
-                  ></path>
-                </svg>
-                <input type="datetime-local" id="departureInput" required />
-              </div>
-            </div>
-            <div class="field-group">
-              <label for="returnInput">Return (optional)</label>
-              <div class="input-shell icon-left">
-                <svg class="input-icon" viewBox="0 0 24 24" aria-hidden="true">
-                  <path
-                    d="M7 3a2 2 0 0 0-2 2v1H4a1 1 0 0 0-1 1v12a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V7a1 1 0 0 0-1-1h-1V5a2 2 0 0 0-2-2h-1v2h-2V3h-4v2H9V3Zm12 8H5v8a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1Z"
-                  ></path>
-                </svg>
-                <input type="datetime-local" id="returnInput" />
-              </div>
-            </div>
-          </div>
-
-          <div class="field-row media-row">
-            <div class="field-group upload-group">
-              <label for="backgroundInput">Background image</label>
-              <div class="input-shell file-shell">
-                <input type="file" id="backgroundInput" accept="image/*" />
-                <span class="file-label">Upload image</span>
-              </div>
-            </div>
-            <div class="thumbnail-preview" id="backgroundPreview" aria-hidden="true"></div>
-          </div>
-
-          <div class="field-row segmented-row">
-            <fieldset class="segmented-control" id="displayModeControl">
-              <legend>Display mode</legend>
-              <label class="segment">
-                <input type="radio" name="displayMode" value="full" checked />
-                <span>Full</span>
-              </label>
-              <label class="segment">
-                <input type="radio" name="displayMode" value="days" />
-                <span>Days only</span>
-              </label>
-              <label class="segment">
-                <input type="radio" name="displayMode" value="hm" />
-                <span>Hours / minutes</span>
-              </label>
-            </fieldset>
-            <button type="submit" class="btn primary" id="addTripBtn">Add trip</button>
-          </div>
-        </form>
-      </section>
-
-      <section class="next-trip-banner hidden" id="nextTripBanner">
-        <div class="banner-content">
-          <span class="banner-label">Next adventure</span>
-          <div class="banner-details">
-            <span class="banner-destination" id="bannerDestination"></span>
-            <span class="banner-countdown" id="bannerCountdown"></span>
-          </div>
-          <button class="banner-link" id="bannerButton" type="button">View countdown</button>
-        </div>
-      </section>
-
-      <section class="cards-section">
-        <div id="emptyState" class="empty-state">
-          <div class="empty-card">
-            <h2>No trips yet</h2>
-            <p>Add your destination above to start tracking your travels.</p>
-          </div>
-        </div>
-        <div id="cardCollection" class="cards-grid" aria-live="polite"></div>
-      </section>
-    </main>
-
-    <button class="floating-add" id="floatingAddButton" type="button">Add trip</button>
-  </div>
-
-  <template id="tripCardTemplate">
-    <article class="trip-card" data-trip-id="">
-      <div class="card-badge" aria-hidden="true"></div>
-      <div class="card-content">
-        <div class="card-header">
-          <div class="title-stack">
-            <h3 class="card-title"></h3>
-            <p class="card-subtitle"></p>
-          </div>
-          <div class="card-actions">
-            <button class="icon-btn edit" type="button" aria-label="Edit trip">
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <path
-                  d="M5 17.6V21h3.4l9.8-9.8-3.4-3.4ZM20.7 7.3a1 1 0 0 0 0-1.4l-2.6-2.6a1 1 0 0 0-1.4 0l-1.8 1.8 4 4Z"
-                ></path>
-              </svg>
-            </button>
-            <button class="icon-btn delete" type="button" aria-label="Delete trip">
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <path
-                  d="M9 3a1 1 0 0 0-1 1v1H4v2h1v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7h1V5h-4V4a1 1 0 0 0-1-1Zm1 5h2v10h-2Zm4 0h2v10h-2Z"
-                ></path>
-              </svg>
-            </button>
-          </div>
-        </div>
-        <div class="countdown-grid" data-mode="full">
-          <div class="time-block" data-unit="months">
-            <span class="time-value">00</span>
-            <span class="time-label">Months</span>
-          </div>
-          <div class="time-block" data-unit="weeks">
-            <span class="time-value">00</span>
-            <span class="time-label">Weeks</span>
-          </div>
-          <div class="time-block" data-unit="days">
-            <span class="time-value">00</span>
-            <span class="time-label">Days</span>
-          </div>
-          <div class="time-block" data-unit="hours">
-            <span class="time-value">00</span>
-            <span class="time-label">Hours</span>
-          </div>
-          <div class="time-block" data-unit="minutes">
-            <span class="time-value">00</span>
-            <span class="time-label">Minutes</span>
-          </div>
-          <div class="time-block" data-unit="seconds">
-            <span class="time-value">00</span>
-            <span class="time-label">Seconds</span>
-          </div>
-        </div>
-        <div class="card-dates">
-          <div class="date-line">
-            <span class="date-label">Departing</span>
-            <span class="date-value depart-date"></span>
-          </div>
-          <div class="date-line return-line">
-            <span class="date-label">Returning</span>
-            <span class="date-value return-date"></span>
-          </div>
-        </div>
-      </div>
-    </article>
-  </template>
-
-  <div class="modal hidden" id="editModal" role="dialog" aria-modal="true" aria-labelledby="editModalTitle">
-    <div class="modal-dialog">
-      <button class="modal-close" type="button" id="closeEditModal" aria-label="Close edit dialog">&times;</button>
-      <h2 id="editModalTitle">Edit trip</h2>
-      <form id="editForm" class="modal-form">
-        <div class="field-group">
-          <label for="editDestination">Destination</label>
-          <div class="input-shell icon-left">
-            <svg class="input-icon" viewBox="0 0 24 24" aria-hidden="true">
-              <path
-                d="M12 2a7 7 0 0 0-7 7c0 4.5 6.2 12.5 6.5 12.9a.6.6 0 0 0 1 0C12.8 21 19 13.5 19 9a7 7 0 0 0-7-7Zm0 9.5A2.5 2.5 0 1 1 14.5 9 2.5 2.5 0 0 1 12 11.5Z"
-              ></path>
-            </svg>
-            <input type="text" id="editDestination" required maxlength="80" />
-          </div>
-        </div>
-        <div class="field-row">
-          <div class="field-group">
-            <label for="editDeparture">Departure</label>
-            <div class="input-shell icon-left">
-              <svg class="input-icon" viewBox="0 0 24 24" aria-hidden="true">
-                <path
-                  d="M7 3a2 2 0 0 0-2 2v1H4a1 1 0 0 0-1 1v12a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V7a1 1 0 0 0-1-1h-1V5a2 2 0 0 0-2-2h-1v2h-2V3h-4v2H9V3Zm12 8H5v8a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1Z"
-                ></path>
-              </svg>
-              <input type="datetime-local" id="editDeparture" required />
-            </div>
-          </div>
-          <div class="field-group">
-            <label for="editReturn">Return (optional)</label>
-            <div class="input-shell icon-left">
-              <svg class="input-icon" viewBox="0 0 24 24" aria-hidden="true">
-                <path
-                  d="M7 3a2 2 0 0 0-2 2v1H4a1 1 0 0 0-1 1v12a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V7a1 1 0 0 0-1-1h-1V5a2 2 0 0 0-2-2h-1v2h-2V3h-4v2H9V3Zm12 8H5v8a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1Z"
-                ></path>
-              </svg>
-              <input type="datetime-local" id="editReturn" />
-            </div>
-          </div>
-        </div>
-        <div class="field-row media-row">
-          <div class="field-group upload-group">
-            <label for="editBackground">Background image</label>
-            <div class="input-shell file-shell">
-              <input type="file" id="editBackground" accept="image/*" />
-              <span class="file-label">Replace image</span>
-            </div>
-          </div>
-          <div class="thumbnail-preview" id="editBackgroundPreview" aria-hidden="true"></div>
-        </div>
-        <div class="modal-actions">
-          <button type="submit" class="btn primary">Save changes</button>
-          <button type="button" class="btn secondary" id="cancelEdit">Cancel</button>
-        </div>
-      </form>
+<dialog id="detail" class="full" aria-labelledby="dTitle">
+  <div class="dhero" id="dHero"><div class="veil"></div>
+    <div class="dbody">
+      <div class="dhead"><button class="icon" id="dClose" type="button" aria-label="Back">←</button><div><p class="eyebrow" id="dTag"></p><h2 id="dTitle"></h2></div><button class="chip" id="dEdit" type="button">Edit</button></div>
+      <div class="units" id="dUnits" title="Tap to change style"></div>
+      <p class="hype" id="dHype"></p>
     </div>
   </div>
+  <div class="facts" id="dFacts"></div>
+  <section class="panel" id="dClockP" hidden><h3>Local time there</h3><p id="dClock" class="clock"></p></section>
+  <section class="panel">
+    <div class="ph"><h3>Packing list</h3><span id="pCount"></span></div>
+    <div class="pbar"><i id="pBar"></i></div>
+    <ul id="pList"></ul>
+    <form id="pForm"><input id="pIn" type="text" placeholder="Add an item" maxlength="60"><button class="btn sm" type="submit">Add</button></form>
+    <button class="link" id="pSeed" type="button">+ Add travel essentials</button>
+  </section>
+  <section class="panel"><h3>Notes</h3><textarea id="dNotes" rows="4" placeholder="Booking refs, addresses, ideas…"></textarea></section>
+  <div class="dacts"><button class="btn ghost" id="dIcs" type="button">Add to calendar</button><button class="btn ghost" id="dShare" type="button">Share trip</button></div>
+</dialog>
 
-  <script src="script.js" defer></script>
+<dialog id="settings" aria-labelledby="sTitle">
+  <div class="sform">
+    <div class="grab" aria-hidden="true"></div><h2 id="sTitle">Settings</h2>
+    <h3 class="grp">Appearance</h3>
+    <div class="set"><span>Theme</span><div class="seg" data-k="theme"><button type="button" data-v="auto">Auto</button><button type="button" data-v="dark">Dark</button><button type="button" data-v="light">Light</button></div></div>
+    <div class="set"><span>Accent</span><div class="seg sw" data-k="accent"><button type="button" data-v="amber" style="--c:#ffb454" aria-label="Amber"></button><button type="button" data-v="coral" style="--c:#ff7a6b" aria-label="Coral"></button><button type="button" data-v="teal" style="--c:#4fd1c5" aria-label="Teal"></button><button type="button" data-v="lilac" style="--c:#b79cff" aria-label="Lilac"></button><button type="button" data-v="mint" style="--c:#7bdc8a" aria-label="Mint"></button></div></div>
+    <div class="set"><span>Countdown style</span><div class="seg" data-k="mode"><button type="button" data-v="full">Full</button><button type="button" data-v="days">Days</button><button type="button" data-v="hm">Hrs·Min</button></div></div>
+    <label class="set"><span>Animated background &amp; confetti</span><input class="tgl" type="checkbox" data-k="fx"></label>
+    <h3 class="grp">Dates &amp; time</h3>
+    <div class="set"><span>Date format</span><div class="seg" data-k="datefmt"><button type="button" data-v="auto">Auto</button><button type="button" data-v="dmy">D/M/Y</button><button type="button" data-v="mdy">M/D/Y</button><button type="button" data-v="iso">ISO</button></div></div>
+    <div class="set"><span>Clock</span><div class="seg" data-k="time"><button type="button" data-v="auto">Auto</button><button type="button" data-v="12">12h</button><button type="button" data-v="24">24h</button></div></div>
+    <h3 class="grp">Alerts &amp; feel</h3>
+    <label class="set"><span>Milestone alerts<small>100 days, 30, 7, tomorrow, departure. Delivered when the app is open or in the background.</small></span><input class="tgl" type="checkbox" data-k="notify"></label>
+    <button class="btn ghost" id="nTest" type="button">Send a test alert</button>
+    <label class="set"><span>Haptic feedback</span><input class="tgl" type="checkbox" data-k="haptics"></label>
+    <h3 class="grp">Your data</h3>
+    <div class="acts2"><button class="btn ghost" id="bkExport" type="button">Export backup</button><label class="btn ghost filebtn">Import backup<input id="bkImport" type="file" accept="application/json" hidden></label></div>
+    <button class="danger" id="bkReset" type="button">Reset everything</button>
+    <button class="btn" id="sDone" type="button">Done</button>
+  </div>
+</dialog>
+<script src="script.js" defer></script>
 </body>
 </html>
