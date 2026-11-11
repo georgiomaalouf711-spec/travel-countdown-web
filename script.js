@@ -108,9 +108,22 @@ function render() {
     el.innerHTML = `<div class="veil"></div><div class="body">
       <div class="row"><span class="tag"></span><span class="wx" hidden></span><button class="edit" type="button">Edit</button></div>
       <h2></h2><p class="sub"></p>
-      <div class="units u-${mode}">${UNITS[mode].map(u => `<div class="u" data-u="${u}"><b>00</b><i>${LABEL[u]}</i></div>`).join('')}</div>
+      <div class="units"></div>
       <div class="bar"><i></i></div>
       <dl class="dates"><div><dt>Departs</dt><dd></dd></div><div class="rr"><dt>Returns</dt><dd></dd></div></dl></div>`;
+    const units = el.querySelector('.units');
+    units.classList.add('u-' + mode);
+    for (const unit of UNITS[mode]) {
+      const item = document.createElement('div');
+      item.className = 'u';
+      item.dataset.u = unit;
+      const value = document.createElement('b');
+      value.textContent = '00';
+      const label = document.createElement('i');
+      label.textContent = LABEL[unit];
+      item.append(value, label);
+      units.append(item);
+    }
     el.querySelector('h2').textContent = t.destination;
     el.querySelector('.edit').setAttribute('aria-label', 'Edit ' + t.destination);
     const dd = el.querySelectorAll('dd');
@@ -384,7 +397,12 @@ function paintDetail(now) {
       const d = new Date(now), h12 = S.time === 'auto' ? undefined : S.time === '12';
       const f = new Intl.DateTimeFormat(undefined, { timeZone: zone, weekday: 'short', hour: '2-digit', minute: '2-digit', hour12: h12 }).format(d);
       const df = Math.round((new Date(d.toLocaleString('en-US', { timeZone: zone })) - new Date(d.toLocaleString('en-US'))) / 18e5) / 2;
-      $('dClock').innerHTML = `<b>${f}</b><span>${df ? (df > 0 ? '+' : '') + df + 'h from here' : 'Same time as here'} · ${zone.replace(/_/g, ' ')}</span>`;
+      const clock = document.createElement('b');
+      clock.textContent = f;
+      const label = document.createElement('span');
+      const offset = df ? (df > 0 ? '+' : '') + df + 'h from here' : 'Same time as here';
+      label.textContent = offset + ' · ' + zone.replace(/_/g, ' ');
+      $('dClock').replaceChildren(clock, label);
       ok = true;
     } catch { /* invalid zone */ }
   }
@@ -714,7 +732,7 @@ async function renderWx(t, r, tok) {
   paintDetail(now);
   if (s.k !== 'done') {
     const from = Math.max(now, +new Date(t.departure)), a = key(from), b = key(t.returnDate ? +new Date(t.returnDate) : from + 6 * 864e5);
-    d.time.forEach((day, i) => { if (day >= a && day <= b) rows.push({ day, c: d.weather_code[i], hi: d.temperature_2m_max[i], lo: d.temperature_2m_min[i], p: d.precipitation_probability_max[i] || 0 }); });
+    d.time.forEach((day, i) => { if (day >= a && day <= b) rows.push({ day, c: d.weather_code[i], hi: d.temperature_2m_max[i], lo: d.temperature_2m_min[i], p: Number.isFinite(d.precipitation_probability_max[i]) ? d.precipitation_probability_max[i] : 0 }); });
     if (!rows.length && s.k === 'up') {
       const dep = new Date(t.departure); dep.setFullYear(dep.getFullYear() - 1);
       const len = Math.min(10, t.returnDate ? Math.max(1, Math.round((+new Date(t.returnDate) - +new Date(t.departure)) / 864e5) + 1) : 7);
@@ -740,6 +758,15 @@ async function renderWx(t, r, tok) {
 }
 const dn = (type, v) => { try { return new Intl.DisplayNames(undefined, { type }).of(v) || v; } catch { return v; } };
 const sym = cur => { try { return new Intl.NumberFormat(undefined, { style: 'currency', currency: cur, currencyDisplay: 'narrowSymbol' }).formatToParts(0).find(p => p.type === 'currency').value; } catch { return cur; } };
+function allowedGuideUrl(value, hosts) {
+  if (typeof value !== 'string') return '';
+  try {
+    const url = new URL(value);
+    if (url.protocol === 'https:' && hosts.includes(url.host) && !url.username && !url.password) return url.href;
+  } catch { /* invalid URL */ }
+  return '';
+}
+
 async function renderGuide(t, r, tok) {
   const body = $('gdBody'), c = COUNTRIES[r.cc], code = c && c.cur;
   const wname = c && r.kind === 'country' ? c.name : r.name.split(',')[0];
@@ -747,27 +774,96 @@ async function renderGuide(t, r, tok) {
   if (tok !== destTok) return;
   $('gdPlace').textContent = r.kind === 'country' ? 'Weather is for the capital, ' + r.name : r.name + (c ? ' · ' + c.name : '');
   const w = wk.status === 'fulfilled' ? wk.value.v : null;
-  const pic = w && w.img && !/map|locator|flag|coat|emblem|seal|location/i.test(decodeURIComponent(w.img)) ? w.img : '';
-  let h = '', stale = wk.status === 'fulfilled' && wk.value.stale;
-  if (c) h += `<div class="gh"><img class="gflag" src="https://flagcdn.com/w80/${c.cc.toLowerCase()}.png" alt="" width="44" height="30"><div><b>${esc(c.name)}</b><span>${r.kind === 'city' ? esc(r.name.split(',')[0]) + ' · ' : ''}Capital: ${esc(c.cap)}</span></div></div>`;
-  if (w) {
-    const ex = w.ex.length > 320 ? w.ex.slice(0, w.ex.lastIndexOf(' ', 320)) + '…' : w.ex;
-    h += (pic ? `<img class="gdimg" src="${esc(pic)}" alt="" loading="lazy">` : '') + `<p class="about">${esc(ex)}</p>`;
+  const guideUrl = allowedGuideUrl(w?.url, ['en.wikivoyage.org', 'en.wikipedia.org']);
+  const imageUrl = allowedGuideUrl(w?.img, ['upload.wikimedia.org']);
+  const pic = imageUrl && !/map|locator|flag|coat|emblem|seal|location/i.test(imageUrl) ? imageUrl : '';
+  const rawRate = rt.status === 'fulfilled' && code && code !== S.home ? rt.value.v.rates?.[code] : 0;
+  const rate = Number.isFinite(rawRate) && rawRate > 0 ? rawRate : 0;
+  const stale = (wk.status === 'fulfilled' && wk.value.stale) || (rate && rt.value.stale);
+
+  const content = document.createDocumentFragment();
+  if (c) {
+    const heading = document.createElement('div');
+    heading.className = 'gh';
+    heading.innerHTML = '<img class="gflag" alt="" width="44" height="30"><div><b></b><span></span></div>';
+    heading.querySelector('img').src = 'https://flagcdn.com/w80/' + c.cc.toLowerCase() + '.png';
+    heading.querySelector('b').textContent = c.name;
+    const city = r.kind === 'city' ? r.name.split(',')[0] + ' · ' : '';
+    heading.querySelector('span').textContent = city + 'Capital: ' + c.cap;
+    content.append(heading);
+  }
+  if (pic) {
+    const image = document.createElement('img');
+    image.className = 'gdimg';
+    image.src = pic;
+    image.alt = '';
+    image.loading = 'lazy';
+    content.append(image);
+  }
+  if (typeof w?.ex === 'string') {
+    const summary = document.createElement('p');
+    summary.className = 'about';
+    const cutoff = w.ex.lastIndexOf(' ', 320);
+    summary.textContent = w.ex.length > 320 ? w.ex.slice(0, cutoff > 0 ? cutoff : 320) + '…' : w.ex;
+    content.append(summary);
   }
   if (c) {
-    const f = [['Currency', `${dn('currency', code)} (${sym(code)})`], ['Languages', c.langs.map(l => dn('language', l)).join(', ') || '—'], ['Calling code', '+' + c.call], ['Drives on', c.left ? 'Left' : 'Right']];
-    h += `<div class="gf">${f.map(([l, v]) => `<div><span>${l}</span><b>${esc(v)}</b></div>`).join('')}</div>`;
+    const facts = document.createElement('div');
+    facts.className = 'gf';
+    const entries = [['Currency', `${dn('currency', code)} (${sym(code)})`], ['Languages', c.langs.map(l => dn('language', l)).join(', ') || '—'], ['Calling code', '+' + c.call], ['Drives on', c.left ? 'Left' : 'Right']];
+    for (const [key, value] of entries) {
+      const fact = document.createElement('div');
+      const label = document.createElement('span');
+      label.textContent = key;
+      const text = document.createElement('b');
+      text.textContent = value;
+      fact.append(label, text);
+      facts.append(fact);
+    }
+    content.append(facts);
   }
-  const rate = rt.status === 'fulfilled' && code && code !== S.home ? rt.value.v.rates[code] : 0;
   if (rate) {
-    stale = stale || rt.value.stale;
-    h += `<h4>Quick convert</h4><div class="conv"><div class="cin"><input id="cvIn" inputmode="decimal" placeholder="Amount" aria-label="Amount"><span id="cvFrom"></span></div><button class="icon sm" id="cvSwap" type="button" aria-label="Swap direction">⇄</button><div class="cout"><b id="cvOut">—</b><span id="cvTo"></span></div></div>`
-      + `<p class="muted">${rate >= 1 ? `1 ${S.home} ≈ ${fmtN(rate)} ${code}` : `1 ${code} ≈ ${fmtN(1 / rate)} ${S.home}`}</p>`;
+    const converter = document.createElement('template');
+    converter.innerHTML = `<h4>Quick convert</h4><div class="conv"><div class="cin"><input id="cvIn" inputmode="decimal" placeholder="Amount" aria-label="Amount"><span id="cvFrom"></span></div><button class="icon sm" id="cvSwap" type="button" aria-label="Swap direction">⇄</button><div class="cout"><b id="cvOut">—</b><span id="cvTo"></span></div></div><p class="muted"></p>`;
+    converter.content.querySelector('p').textContent = rate >= 1 ? `1 ${S.home} ≈ ${fmtN(rate)} ${code}` : `1 ${code} ≈ ${fmtN(1 / rate)} ${S.home}`;
+    content.append(converter.content);
   }
-  h += `<p class="links">${w ? `<a href="${esc(w.url)}" target="_blank" rel="noopener">Full guide ↗</a>` : ''}<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(r.name + (c ? ', ' + c.name : ''))}" target="_blank" rel="noopener">Open in Maps ↗</a></p>`;
-  if (pic) h += '<button class="link" id="gdPhoto" type="button">📸 Use this photo as the trip background</button>';
-  if (stale) h += '<p class="muted">Offline — showing saved data</p>';
-  body.innerHTML = h + `<p class="credit">${w ? `Text from ${w.h.includes('voyage') ? 'Wikivoyage' : 'Wikipedia'} (CC BY-SA) · ` : ''}Rates: open.er-api.com · Flags: flagcdn.com</p>`;
+
+  const links = document.createElement('p');
+  links.className = 'links';
+  const addLink = (label, url) => {
+    const link = document.createElement('a');
+    link.textContent = label;
+    link.href = url;
+    link.target = '_blank';
+    link.rel = 'noopener';
+    links.append(link);
+  };
+  if (guideUrl) addLink('Full guide ↗', guideUrl);
+  addLink('Open in Maps ↗', 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(r.name + (c ? ', ' + c.name : '')));
+  content.append(links);
+
+  if (pic) {
+    const button = document.createElement('button');
+    button.className = 'link';
+    button.id = 'gdPhoto';
+    button.type = 'button';
+    button.textContent = '📸 Use this photo as the trip background';
+    content.append(button);
+  }
+  if (stale) {
+    const notice = document.createElement('p');
+    notice.className = 'muted';
+    notice.textContent = 'Offline — showing saved data';
+    content.append(notice);
+  }
+  const credit = document.createElement('p');
+  credit.className = 'credit';
+  const attribution = w ? `Text from ${w.h === 'en.wikivoyage.org' ? 'Wikivoyage' : 'Wikipedia'} (CC BY-SA) · ` : '';
+  credit.textContent = attribution + 'Rates: open.er-api.com · Flags: flagcdn.com';
+  content.append(credit);
+  body.replaceChildren(content);
+
   if (rate) {
     let rev = false;
     const upd = () => { const v = parseFloat($('cvIn').value.replace(',', '.')); $('cvFrom').textContent = rev ? S.home : code; $('cvTo').textContent = rev ? code : S.home; $('cvOut').textContent = isFinite(v) ? fmtN(rev ? v * rate : v / rate) : '—'; };
